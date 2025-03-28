@@ -95,12 +95,26 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Models\CommandData.cs" />
     <Compile Include="SocketClient.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DBHelper\DBHelper.csproj">
+      <Project>{9B48B5CF-67FA-419D-84BF-17E5DE36F4DB}</Project>
+      <Name>DBHelper</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\DgzAIO.HttpService\ApiClient.csproj">
+      <Project>{0e4ec176-5aa5-46b9-8e69-957a650ea606}</Project>
+      <Name>ApiClient</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\TestApp\packages\System.ValueTuple.4.6.1\build\net471\System.ValueTuple.targets" Condition="Exists('..\TestApp\packages\System.ValueTuple.4.6.1\build\net471\System.ValueTuple.targets')" />
