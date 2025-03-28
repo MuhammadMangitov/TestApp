@@ -1,0 +1,55 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35818.85
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DgzAIO", "DgzAIO.csproj", "{BCD59C80-9B80-44AB-8FC5-41E3788DF6B7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApplicationMonitor", "..\ApplicationMonitor\ApplicationMonitor.csproj", "{C1D98E0B-3F21-41E2-BC6D-98E4865FA2C1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DBHelper", "..\DBHelper\DBHelper.csproj", "{9B48B5CF-67FA-419D-84BF-17E5DE36F4DB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketClient", "..\SocketClient\SocketClient.csproj", "{D1E7F70D-2DC3-47FD-9762-86572C384C5F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ComputerInformation", "..\ComputerInformation\ComputerInformation.csproj", "{BFB35898-7755-448F-8924-52F9C34D49B8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiClient", "..\DgzAIO.HttpService\ApiClient.csproj", "{0E4EC176-5AA5-46B9-8E69-957A650EA606}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BCD59C80-9B80-44AB-8FC5-41E3788DF6B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BCD59C80-9B80-44AB-8FC5-41E3788DF6B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BCD59C80-9B80-44AB-8FC5-41E3788DF6B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BCD59C80-9B80-44AB-8FC5-41E3788DF6B7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C1D98E0B-3F21-41E2-BC6D-98E4865FA2C1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C1D98E0B-3F21-41E2-BC6D-98E4865FA2C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C1D98E0B-3F21-41E2-BC6D-98E4865FA2C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C1D98E0B-3F21-41E2-BC6D-98E4865FA2C1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9B48B5CF-67FA-419D-84BF-17E5DE36F4DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9B48B5CF-67FA-419D-84BF-17E5DE36F4DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9B48B5CF-67FA-419D-84BF-17E5DE36F4DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9B48B5CF-67FA-419D-84BF-17E5DE36F4DB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D1E7F70D-2DC3-47FD-9762-86572C384C5F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D1E7F70D-2DC3-47FD-9762-86572C384C5F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D1E7F70D-2DC3-47FD-9762-86572C384C5F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D1E7F70D-2DC3-47FD-9762-86572C384C5F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BFB35898-7755-448F-8924-52F9C34D49B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BFB35898-7755-448F-8924-52F9C34D49B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BFB35898-7755-448F-8924-52F9C34D49B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BFB35898-7755-448F-8924-52F9C34D49B8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0E4EC176-5AA5-46B9-8E69-957A650EA606}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0E4EC176-5AA5-46B9-8E69-957A650EA606}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0E4EC176-5AA5-46B9-8E69-957A650EA606}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0E4EC176-5AA5-46B9-8E69-957A650EA606}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {36DC2168-EC25-4B42-BA50-29A6BF38F4BD}
+	EndGlobalSection
+EndGlobal
