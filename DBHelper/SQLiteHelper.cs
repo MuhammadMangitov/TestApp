@@ -1,4 +1,4 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using System.Data.SQLite;
 using SQLitePCL;
 using System;
 using System.IO;
@@ -8,24 +8,24 @@ namespace DBHelper
 {
     public class SQLiteHelper
     {
-        private static readonly string dbPath = "C:\\Users\\Muhammad\\Desktop\\SystemMonitorInstaller\\DBHelper\\SystemMonitor.db";
-        static SQLiteHelper()
-        {
-            Batteries.Init(); // SQLite kutubxonasini ishga tushirish
-            Console.WriteLine("SQLiteHelper sinfi ishga tushdi.");
-        }
+        private static readonly string dbPath = @"C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitor\SystemMonitor.db";
 
-        public static SqliteConnection CreateConnection()
-        {
-            Batteries.Init(); // SQLite kutubxonasini ishga tushirish
-
+        public static SQLiteConnection CreateConnection()
+        { 
             if (!File.Exists(dbPath))
             {
                 Console.WriteLine("Baza mavjud emas!");
+
+
+                
+                Console.WriteLine($"Fayl mavjudmi? {File.Exists(dbPath)}");
+
+                Console.WriteLine($"Fayl yo'li: {dbPath}");
+
                 return null;
             }
 
-            var connection = new SqliteConnection($"Data Source={dbPath}; Version=3;");
+            var connection = new SQLiteConnection($"Data Source={dbPath};Version=3;");
             connection.Open();
             return connection;
         }

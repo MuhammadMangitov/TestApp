@@ -19,15 +19,16 @@ namespace DgzAIO.HttpService
 
         private static readonly string BaseUrl = ConfigurationManager.GetBaseUrl();
         private static readonly string BaseUrlForApps = ConfigurationManager.GetBaseUrlForApps();
-
         public static async Task<(string token, int statusCode)> GetJwtTokenFromApi()
         {
-            var computerInfo = await ComputerInfo.GetComputerInfoAsync();
-            var jsonContent = JsonConvert.SerializeObject(computerInfo);
-            var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-
             try
             {
+                var computerInfo = await ComputerInfo.GetComputerInfoAsync();
+                Console.WriteLine($"Kompyuter ma'lumotlari: {JsonConvert.SerializeObject(computerInfo)}");
+
+                var jsonContent = JsonConvert.SerializeObject(computerInfo);
+                var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
                 var response = await client.PostAsync(BaseUrl, content);
                 int statusCode = (int)response.StatusCode;
 

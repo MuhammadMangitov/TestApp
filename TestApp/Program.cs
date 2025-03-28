@@ -11,9 +11,22 @@ namespace DgzAIO
         [STAThread]
         static void Main(string[] args)
         {
-            Modules.StartDBHelper();
-            //Modules.StartApplicationMonitor();
-            //Modules.StartSocketClient();
+            try
+            {
+                Console.WriteLine("Dastur ishga tushdi...");
+
+                Modules.Start();
+
+                Console.WriteLine("Barcha modullar ishga tushdi!");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Xatolik yuz berdi: {ex}");
+            }
+
+            Console.ReadLine();
         }
     }
+
 }
+
