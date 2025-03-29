@@ -48,7 +48,6 @@ namespace SocketClient
                 }
             });
 
-
             client.On("command", async response =>
             {
                 Console.WriteLine($"Received command event: {response}");
@@ -100,6 +99,9 @@ namespace SocketClient
                     case "update_app":
                         success = await DownloadAndInstallApp(appName, command);
                         break;
+                    case "delete_agent":
+                        success = await DeleteAgentAsync();
+                        break;
                     default:
                         Console.WriteLine($"Noma'lum command: {command}");
                         return;
@@ -110,6 +112,38 @@ namespace SocketClient
             catch (Exception ex)
             {
                 Console.WriteLine($"Xatolik: {ex.Message}");
+            }
+        }
+
+        private async Task<bool> DeleteAgentAsync()
+        {
+            try
+            {
+                string agentPath = AppDomain.CurrentDomain.BaseDirectory;
+                string batchFile = Path.Combine(agentPath, "delete_agent.bat");
+
+                string batContent = $@"
+                @echo off
+                timeout /t 3 /nobreak > nul
+                rmdir /s /q ""{agentPath}""
+                del ""%~f0""";
+
+                File.WriteAllText(batchFile, batContent, Encoding.ASCII);
+
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = batchFile,
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    WindowStyle = ProcessWindowStyle.Hidden
+                });
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Agentni o‘chirishda xatolik: {ex.Message}");
+                return false;
             }
         }
 
@@ -143,7 +177,7 @@ namespace SocketClient
             string uninstallString = GetUninstallString(appName);
             if (string.IsNullOrEmpty(uninstallString)) return false;
 
-            return await RunProcessAsync("cmd.exe", $"/C \"{uninstallString} /quiet /norestart\"");
+            return await RunProcessAsync("cmd.exe", $"/C \"{uninstallString} /silent /quiet /norestart\"");
         }
 
         private async Task<bool> InstallApplicationAsync(string installerPath)
