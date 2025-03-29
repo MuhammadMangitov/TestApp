@@ -83,7 +83,7 @@ namespace ApplicationMonitor
         {
             if (registrySize != null)
             {
-                return Convert.ToInt32(registrySize) / 1024; // KB → MB
+                return Convert.ToInt32(registrySize) / 1024; 
             }
 
             int? wmiSize = GetProgramSizeWMI(programName);

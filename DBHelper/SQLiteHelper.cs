@@ -225,5 +225,6 @@ namespace DBHelper
 
             return (DateTime.UtcNow - lastSentTime.Value).TotalHours >= 24;
         }
+
     }
 }

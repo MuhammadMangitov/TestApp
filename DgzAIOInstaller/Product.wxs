@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+	<Product Id="*" Name="DgzAIOInstaller" Language="1033" Version="1.0.0.0" Manufacturer="YourCompany"
+        UpgradeCode="ba0b2f83-674c-4899-a212-a3dd0ec9c713">
+		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine"/>
+
+		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+		<MediaTemplate />
+
+		<Feature Id="ProductFeature" Title="DgzAIOInstaller" Level="1">
+			<ComponentGroupRef Id="ProductComponents" />
+		</Feature>
+	</Product>
+
+	<Fragment>
+		<Directory Id="TARGETDIR" Name="SourceDir">
+			<Directory Id="ProgramFilesFolder">
+				<Directory Id="INSTALLFOLDER" Name="DgzAIOInstaller"/>
+			</Directory>
+		</Directory>
+	</Fragment>
+
+	<Fragment>
+		<ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+			<Component Id="DgzAIOServiceComponent" Guid="A3BB6943-C53E-4CC7-BB5C-EF98F915AE50">
+				
+				<File Id="DgzAIOServiceExe" Name="DgzAIOWindowsService.exe" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\DgzAIOWindowsService\bin\Debug\DgzAIOWindowsService.exe"/>
+
+				<ServiceInstall Id="DgzAIOServiceInstaller"
+					Name="DgzAIOService"
+					DisplayName="DgzAIO Windows Service"
+					Description="DgzAIO xizmatlari uchun Windows Service"
+					Start="auto"
+					Type="ownProcess"
+					Account="LocalSystem"
+					ErrorControl="normal"/>
+				<ServiceControl Id="StartDgzAIOService"
+                    Name="DgzAIOService"
+                    Start="install"
+                    Stop="both"
+                    Remove="uninstall"
+                    Wait="yes" />
+			</Component>
+			
+			<Component Id="AppSettingsComponent" Guid="B2F6A8D2-EB65-4B0C-8DF4-C93A3C99E1A1">
+				<File Id="AppSettingsFile" Name="appsettings.json" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\DgzAIO.HttpService\appsettings.json"/>
+			</Component>
+		</ComponentGroup>
+	</Fragment>
+</Wix>
