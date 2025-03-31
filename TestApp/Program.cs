@@ -13,7 +13,6 @@ namespace DgzAIO
         {
             try
             {
-                Console.WriteLine("Dastur ishga tushdi...");
 
                 Modules.Start();
 
