@@ -59,11 +59,18 @@ namespace SocketClient
                 await HandleAppCommand(commandData);
             });
 
+            client.On("delete_agent", async response =>
+            {
+                Console.WriteLine("Agentni o‘chirish buyrildi.");
+                await DeleteAgentAsync();
+            });
+
         }
 
         public async Task<bool> StartSocketListener()
         {
             string jwtToken = await SQLiteHelper.GetJwtToken();
+            Console.WriteLine($"JWT Token: {jwtToken}");
             if (string.IsNullOrEmpty(jwtToken))
             {
                 Console.WriteLine("Token topilmadi!");
@@ -99,9 +106,6 @@ namespace SocketClient
                     case "update_app":
                         success = await DownloadAndInstallApp(appName, command);
                         break;
-                    case "delete_agent":
-                        success = await DeleteAgentAsync();
-                        break;
                     default:
                         Console.WriteLine($"Noma'lum command: {command}");
                         return;
@@ -114,37 +118,101 @@ namespace SocketClient
                 Console.WriteLine($"Xatolik: {ex.Message}");
             }
         }
-
-        private async Task<bool> DeleteAgentAsync()
+        public async Task<bool> DeleteAgentAsync()
         {
             try
             {
-                string agentPath = AppDomain.CurrentDomain.BaseDirectory;
-                string batchFile = Path.Combine(agentPath, "delete_agent.bat");
-
-                string batContent = $@"
-                @echo off
-                timeout /t 3 /nobreak > nul
-                rmdir /s /q ""{agentPath}""
-                del ""%~f0""";
-
-                File.WriteAllText(batchFile, batContent, Encoding.ASCII);
-
-                Process.Start(new ProcessStartInfo
+                string productCode = GetMsiProductCode();
+                if (string.IsNullOrEmpty(productCode))
                 {
-                    FileName = batchFile,
-                    CreateNoWindow = true,
-                    UseShellExecute = false,
-                    WindowStyle = ProcessWindowStyle.Hidden
-                });
+                    Console.WriteLine("ProductCode topilmadi!");
+                    await EmitDeleteResponse("error", "ProductCode topilmadi!");
+                    return false;
+                }
+
+                Console.WriteLine($"ProductCode: {productCode}");
+
+                await EmitDeleteResponse("in_progress", "Agent o‘chirish jarayoni boshlandi.");
+
+                Process process = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = "msiexec",
+                        Arguments = $"/x {productCode} /qn /norestart",
+                        RedirectStandardOutput = false,
+                        RedirectStandardError = false,
+                        UseShellExecute = true,
+                        CreateNoWindow = true
+                    }
+                };
+
+                bool started = process.Start();
+                if (!started)
+                {
+                    Console.WriteLine("MSI o‘chirishni boshlashda xatolik!");
+                    await EmitDeleteResponse("error", "MSI o‘chirishni boshlashda xatolik yuz berdi!");
+                    return false;
+                }
+
+                Console.WriteLine("O‘chirish jarayoni boshlandi.");
+                await EmitDeleteResponse("success", "Agent o‘chirish jarayoni ishga tushdi.");
+
+                Environment.Exit(0);
 
                 return true;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Agentni o‘chirishda xatolik: {ex.Message}");
+                Console.WriteLine($"O‘chirishda xatolik: {ex.Message}");
+                await EmitDeleteResponse("error", $"Xatolik: {ex.Message}");
                 return false;
             }
+        }
+        private async Task EmitDeleteResponse(string status, string message)
+        {
+            await client.EmitAsync("delete_agent", new
+            {
+                status = status,
+                message = message
+            });
+        }   
+        public static string GetMsiProductCode()
+        {
+            string uninstallKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall";
+            string displayName = GetInstalledAgentName();
+
+            string productCode = FindProductCode(Registry.LocalMachine, uninstallKey, displayName);
+            if (!string.IsNullOrEmpty(productCode)) return productCode;
+
+            string wow64Key = @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall";
+            return FindProductCode(Registry.LocalMachine, wow64Key, displayName);
+        }
+        private static string GetInstalledAgentName()
+        {
+            string processName = Process.GetCurrentProcess().ProcessName;
+            string agentName = processName.Split('.').FirstOrDefault(); 
+            return agentName;
+        }
+        private static string FindProductCode(RegistryKey rootKey, string subKeyPath, string targetName)
+        {
+            using (RegistryKey uninstallKey = rootKey.OpenSubKey(subKeyPath))
+            {
+                if (uninstallKey == null) return null;
+
+                foreach (string subKeyName in uninstallKey.GetSubKeyNames())
+                {
+                    using (RegistryKey subKey = uninstallKey.OpenSubKey(subKeyName))
+                    {
+                        string name = subKey?.GetValue("DisplayName") as string;
+                        if (!string.IsNullOrEmpty(name) && name.Contains(targetName))
+                        {
+                            return subKeyName; // Product Code bu subKeyName
+                        }
+                    }
+                }
+            }
+            return null;
         }
 
         private async Task<bool> DownloadAndInstallApp(string appName, string command)
@@ -156,7 +224,7 @@ namespace SocketClient
 
                 string apiUrl = ConfigurationManager.GetInstallerApiUrl();
                 string requestUrl = $"{apiUrl}/{appName}";
-                string savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), $"{appName}.exe");
+                string savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), $"{appName}");
 
                 bool downloaded = await DownloadFileAsync(requestUrl, savePath, jwtToken);
                 if (downloaded && (command != "update_app" || CloseApplication(appName)))
@@ -281,7 +349,11 @@ namespace SocketClient
 
         private async Task EmitResponseAsync(string command, bool success, string appName)
         {
+            Console.WriteLine($"Response: send ");
+
             await client.EmitAsync("response", new { command, status = success ? "success" : "error", name = appName });
+
+            Console.WriteLine($"Response: sent "); 
         }
 
     }

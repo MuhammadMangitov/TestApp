@@ -93,7 +93,7 @@ namespace DgzAIO.HttpService
             return false;
         }
 
-        public static async Task<bool> SendProgramInfo(List<ProgramDetails> programs)
+        public static async Task<bool> SendProgramInfo(Task<List<ProgramDetails>> programs)
         {
             return await SendData(BaseUrlForApps, programs);
         }

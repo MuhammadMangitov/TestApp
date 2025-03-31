@@ -18,6 +18,7 @@ namespace ComputerInformation
                 Version = Environment.OSVersion.Version.ToString(),
                 Ram = await MemoryInfo.GetRamAsync(),
                 CPU = await ProcessorInfo.GetCpuAsync(),
+                Model = await ProcessorInfo.GetCpuModelAsync(),
                 Cores = await ProcessorInfo.GetCpuCoresAsync(),
                 NetworkAdapters = await NetworkInfo.GetNetworkAdaptersAsync(),
                 Disks = await DiskInfo.GetDisksAsync()

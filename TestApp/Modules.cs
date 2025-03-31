@@ -15,11 +15,10 @@ namespace DgzAIO
     {
         public static void Start()
         {
-            StartDBHelper();             
-            StartApiClient();            
-            StartApplicationMonitor();  
-            StartComputerInformation();  
-            StartSocketClient();        
+            StartDBHelper();
+            StartApiClient();
+            StartApplicationMonitor();
+            StartComputerInformation();
         }
 
         public static void StartComputerInformation()
@@ -116,6 +115,7 @@ namespace DgzAIO
             {
                 Console.WriteLine("[API Client] JWT token olishda xatolik yuz berdi!");
             }
+            StartSocketClient();
         }
 
         private static async Task SendProgramInfo()

@@ -27,7 +27,6 @@ namespace DgzAIO.Services
                 return "Noma'lum";
             });
         }
-
         public static async Task<int> GetCpuCoresAsync()
         {
             return await Task.Run(() =>
@@ -47,6 +46,27 @@ namespace DgzAIO.Services
                     Console.WriteLine($"CPU yadrolari haqida ma'lumot olishda xatolik: {ex.Message}");
                 }
                 return 0;
+            });
+        }
+        public static async Task<string> GetCpuModelAsync()
+        {
+            return await Task.Run(() =>
+            {
+                try
+                {
+                    using (var searcher = new ManagementObjectSearcher("SELECT Caption FROM Win32_Processor"))
+                    {
+                        foreach (ManagementObject obj in searcher.Get())
+                        {
+                            return obj["Caption"].ToString();
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"CPU modeli haqida ma'lumot olishda xatolik: {ex.Message}");
+                }
+                return "Noma'lum";
             });
         }
     }

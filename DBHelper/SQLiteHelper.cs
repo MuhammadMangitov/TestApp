@@ -8,7 +8,7 @@ namespace DBHelper
 {
     public class SQLiteHelper
     {
-        private static readonly string dbPath = @"C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitor\SystemMonitor.db";
+        private static readonly string dbPath = "C:\\Users\\Muhammad\\Desktop\\c#_modul\\github\\SystemMonitorInstaller\\DBHelper\\SystemMonitor.db";
 
         public static SQLiteConnection CreateConnection()
         { 

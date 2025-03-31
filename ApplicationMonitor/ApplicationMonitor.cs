@@ -12,28 +12,28 @@ namespace ApplicationMonitor
 {
     public class ApplicationMonitor
     {
-        public static List<ProgramDetails> GetInstalledPrograms()
+        public static async Task<List<ProgramDetails>> GetInstalledPrograms()
         {
             var programs = new List<ProgramDetails>();
             var seenPrograms = new HashSet<string>();
 
             string[] registryKeysLocalMachine = {
-                @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
-                @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
+            @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+            @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
             };
 
             string[] registryKeysCurrentUser = {
-                @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"
+            @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"
             };
 
             foreach (var keyPath in registryKeysLocalMachine)
             {
-                _ = GetProgramsFromRegistry(Registry.LocalMachine, keyPath, programs, seenPrograms);
+                await GetProgramsFromRegistry(Registry.LocalMachine, keyPath, programs, seenPrograms);
             }
 
             foreach (var keyPath in registryKeysCurrentUser)
             {
-                _ = GetProgramsFromRegistry(Registry.CurrentUser, keyPath, programs, seenPrograms);
+                await GetProgramsFromRegistry(Registry.CurrentUser, keyPath, programs, seenPrograms);
             }
 
             return programs;
@@ -83,10 +83,10 @@ namespace ApplicationMonitor
         {
             if (registrySize != null)
             {
-                return Convert.ToInt32(registrySize) / 1024; 
+                return Convert.ToInt32(registrySize) / 1024;
             }
 
-            int? wmiSize = GetProgramSizeWMI(programName);
+            int? wmiSize = await Task.Run(() => GetProgramSizeWMI(programName));
             if (wmiSize.HasValue)
                 return wmiSize;
 
@@ -97,7 +97,7 @@ namespace ApplicationMonitor
         {
             try
             {
-                using (var searcher = new ManagementObjectSearcher("SELECT Name, EstimatedSize FROM Win32_InstalledWin32Program"))
+                using (var searcher = new ManagementObjectSearcher("SELECT Name, EstimatedSize FROM Win32_Product"))
                 {
                     foreach (var obj in searcher.Get())
                     {
