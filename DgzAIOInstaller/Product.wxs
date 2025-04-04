@@ -1,21 +1,47 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-	<Product Id="*" Name="DgzAIOInstaller" Language="1033" Version="1.0.0.0" Manufacturer="YourCompany"
-        UpgradeCode="ba0b2f83-674c-4899-a212-a3dd0ec9c713">
-		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine"/>
 
+	<!-- O‘zgaruvchi sifatida manba papkasini aniqlash -->
+	<?define SourceDir="..\DgzAIOWindowsService\bin\Debug" ?>
+
+	<Product Id="*" Name="DgzAIOInstaller" Language="1033" Version="1.0.0.0" Manufacturer="YourCompany"
+		 UpgradeCode="ba0b2f83-674c-4899-a212-a3dd0ec9c713">
+		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
 		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
 		<MediaTemplate />
 
 		<Feature Id="ProductFeature" Title="DgzAIOInstaller" Level="1">
-			<ComponentGroupRef Id="ProductComponents" />
+			<ComponentRef Id="DgzAIOServiceComponent"/>
+			<ComponentRef Id="DgzAIOExecutableComponent"/>
+			<ComponentRef Id="DependenciesComponent"/>
+			<ComponentRef Id="SQLiteInteropX86Component"/>
+			<ComponentRef Id="SQLiteInteropX64Component"/>
 		</Feature>
 	</Product>
 
 	<Fragment>
 		<Directory Id="TARGETDIR" Name="SourceDir">
 			<Directory Id="ProgramFilesFolder">
-				<Directory Id="INSTALLFOLDER" Name="DgzAIOInstaller"/>
+				<Directory Id="INSTALLFOLDER" Name="DgzAIOInstaller">
+				<Directory Id="X86FOLDER" Name="x86">
+					<Component Id="SQLiteInteropX86Component" Guid="E3F4A5B6-7890-4C1D-D2E3-F4A5B6C7D8E9">
+						<File Id="SQLiteInteropDll_x86"
+                              Name="SQLite.Interop.dll"
+                              Source="..\DBHelper\bin\Debug\x86\SQLite.Interop.dll"
+                              ProcessorArchitecture="x86"
+                              KeyPath="yes" />
+					</Component>
+				</Directory>
+				<Directory Id="X64FOLDER" Name="x64">
+					<Component Id="SQLiteInteropX64Component" Guid="F4A5B6C7-8901-4D2E-E3F4-A5B6C7D8F9A0">
+						<File Id="SQLiteInteropDll_x64"
+                              Name="SQLite.Interop.dll"
+                              Source="..\DBHelper\bin\Debug\x64\SQLite.Interop.dll"
+                              ProcessorArchitecture="x64"
+                              KeyPath="yes" />
+					</Component>
+				</Directory>	
+				</Directory>	
 			</Directory>
 		</Directory>
 	</Fragment>
@@ -23,28 +49,146 @@
 	<Fragment>
 		<ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
 			<Component Id="DgzAIOServiceComponent" Guid="A3BB6943-C53E-4CC7-BB5C-EF98F915AE50">
-				
-				<File Id="DgzAIOServiceExe" Name="DgzAIOWindowsService.exe" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\DgzAIOWindowsService\bin\Debug\DgzAIOWindowsService.exe"/>
-
+				<File Id="DgzAIOServiceExe"
+					Name="DgzAIOWindowsService.exe"
+					Source="$(var.SourceDir)\DgzAIOWindowsService.exe"/>
 				<ServiceInstall Id="DgzAIOServiceInstaller"
-					Name="DgzAIOService"
-					DisplayName="DgzAIO Windows Service"
-					Description="DgzAIO xizmatlari uchun Windows Service"
-					Start="auto"
-					Type="ownProcess"
-					Account="LocalSystem"
-					ErrorControl="normal"/>
+						Name="DgzAIOService"
+						DisplayName="DgzAIO Windows Service"
+						Description="DgzAIO xizmatlari uchun Windows Service"
+						Start="auto"
+						Type="ownProcess"
+						Account="LocalSystem"
+						ErrorControl="normal"/>
 				<ServiceControl Id="StartDgzAIOService"
-                    Name="DgzAIOService"
-                    Start="install"
-                    Stop="both"
-                    Remove="uninstall"
-                    Wait="yes" />
+						Name="DgzAIOService"
+						Start="install"
+						Stop="both"
+						Remove="uninstall"
+						Wait="yes" />
 			</Component>
 			
-			<Component Id="AppSettingsComponent" Guid="B2F6A8D2-EB65-4B0C-8DF4-C93A3C99E1A1">
-				<File Id="AppSettingsFile" Name="appsettings.json" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\DgzAIO.HttpService\appsettings.json"/>
+			<Component Id="DgzAIOExecutableComponent" Guid="0E8EC08D-0E7B-4C7C-A4F6-9264C53955AB">
+				<File Id="DgzAIOExe"
+					Name="DgzAIO.exe"
+					Source="..\TestApp\bin\Debug\DgzAIO.exe"/>
 			</Component>
+
+			<Component Id="DependenciesComponent" Guid="D2E3F4A5-6789-4B0C-C1D2-E3F4A5B6C7D8">
+				<File Id="AppSettingsFile"
+					Name="appsettings.json"
+					Source="$(var.SourceDir)\appsettings.json"/>
+				<File Id="DgzAIOHttpServiceDll"
+					  Name="DgzAIO.HttpService.dll"
+					  Source="$(var.SourceDir)\DgzAIO.HttpService.dll"/>
+				<File Id="DgzAIOHttpServiceConfig"
+					  Name="DgzAIO.HttpService.dll.config"
+					  Source="$(var.SourceDir)\DgzAIO.HttpService.dll.config"/>
+
+				<File Id="ApplicationMonitorDll"
+					  Name="ApplicationMonitor.dll"
+					  Source="$(var.SourceDir)\ApplicationMonitor.dll"/>
+				<File Id="ApplicationMonitorConfig"
+					  Name="ApplicationMonitor.dll.config"
+					  Source="$(var.SourceDir)\ApplicationMonitor.dll.config"/>
+
+				<File Id="ComputerInformationDll"
+					  Name="ComputerInformation.dll"
+					  Source="$(var.SourceDir)\ComputerInformation.dll"/>
+				<File Id="ComputerInformationConfig"
+					  Name="ComputerInformation.dll.config"
+					  Source="$(var.SourceDir)\ComputerInformation.dll.config"/>
+
+				<File Id="SocketClientDll"
+					  Name="SocketClient.dll"
+					  Source="$(var.SourceDir)\SocketClient.dll"/>
+				<File Id="SocketClientConfig"
+					  Name="SocketClient.dll.config"
+					  Source="$(var.SourceDir)\SocketClient.dll.config"/>
+
+				<File Id="SocketIOCoreDll"
+					  Name="SocketIO.Core.dll"
+					  Source="$(var.SourceDir)\SocketIO.Core.dll"/>
+				<File Id="SocketIOSerializerCoreDll"
+					  Name="SocketIO.Serializer.Core.dll"
+					  Source="$(var.SourceDir)\SocketIO.Serializer.Core.dll"/>
+				<File Id="SocketIOSerializerSystemTextJsonDll"
+					  Name="SocketIO.Serializer.SystemTextJson.dll"
+					  Source="$(var.SourceDir)\SocketIO.Serializer.SystemTextJson.dll"/>
+				<File Id="SocketIOClientDll"
+					  Name="SocketIOClient.dll"
+					  Source="$(var.SourceDir)\SocketIOClient.dll"/>
+
+				<File Id="DBHelperDll"
+					  Name="DBHelper.dll"
+					  Source="$(var.SourceDir)\DBHelper.dll"/>
+				<File Id="DBHelperConfig"
+					  Name="DBHelper.dll.config"
+					  Source="$(var.SourceDir)\DBHelper.dll.config"/>
+
+				<File Id="MicrosoftBclAsyncInterfacesDll"
+					  Name="Microsoft.Bcl.AsyncInterfaces.dll"
+					  Source="$(var.SourceDir)\Microsoft.Bcl.AsyncInterfaces.dll"/>
+				<File Id="MicrosoftExtensionsConfigurationAbstractionsDll"
+					  Name="Microsoft.Extensions.Configuration.Abstractions.dll"
+					  Source="$(var.SourceDir)\Microsoft.Extensions.Configuration.Abstractions.dll"/>
+				<File Id="MicrosoftExtensionsConfigurationDll"
+					  Name="Microsoft.Extensions.Configuration.dll"
+					  Source="$(var.SourceDir)\Microsoft.Extensions.Configuration.dll"/>
+				<File Id="MicrosoftExtensionsConfigurationEnvironmentVariablesDll"
+					  Name="Microsoft.Extensions.Configuration.EnvironmentVariables.dll"
+					  Source="$(var.SourceDir)\Microsoft.Extensions.Configuration.EnvironmentVariables.dll"/>
+				<File Id="MicrosoftExtensionsConfigurationFileExtensionsDll"
+					  Name="Microsoft.Extensions.Configuration.FileExtensions.dll"
+					  Source="$(var.SourceDir)\Microsoft.Extensions.Configuration.FileExtensions.dll"/>
+				<File Id="MicrosoftExtensionsConfigurationJsonDll"
+					  Name="Microsoft.Extensions.Configuration.Json.dll"
+					  Source="$(var.SourceDir)\Microsoft.Extensions.Configuration.Json.dll"/>
+				<File Id="MicrosoftExtensionsFileProvidersAbstractionsDll"
+					  Name="Microsoft.Extensions.FileProviders.Abstractions.dll"
+					  Source="$(var.SourceDir)\Microsoft.Extensions.FileProviders.Abstractions.dll"/>
+				<File Id="MicrosoftExtensionsFileProvidersPhysicalDll"
+					  Name="Microsoft.Extensions.FileProviders.Physical.dll"
+					  Source="$(var.SourceDir)\Microsoft.Extensions.FileProviders.Physical.dll"/>
+				<File Id="MicrosoftExtensionsFileSystemGlobbingDll"
+					  Name="Microsoft.Extensions.FileSystemGlobbing.dll"
+					  Source="$(var.SourceDir)\Microsoft.Extensions.FileSystemGlobbing.dll"/>
+				<File Id="MicrosoftExtensionsPrimitivesDll"
+					  Name="Microsoft.Extensions.Primitives.dll"
+					  Source="$(var.SourceDir)\Microsoft.Extensions.Primitives.dll"/>
+				<File Id="SystemBuffersDll"
+					  Name="System.Buffers.dll"
+					  Source="$(var.SourceDir)\System.Buffers.dll"/>
+				<File Id="SystemDataSQLiteDll"
+					  Name="System.Data.SQLite.dll"
+					  Source="$(var.SourceDir)\System.Data.SQLite.dll"/>
+				<File Id="SystemIOPipelinesDll"
+					  Name="System.IO.Pipelines.dll"
+					  Source="$(var.SourceDir)\System.IO.Pipelines.dll"/>
+				
+				<File Id="SystemMemoryDll"
+					  Name="System.Memory.dll"
+					  Source="..\DgzAIO.HttpService\bin\Debug\System.Memory.dll"/> 
+				
+				<File Id="SystemNumericsVectorsDll"
+					  Name="System.Numerics.Vectors.dll"
+					  Source="$(var.SourceDir)\System.Numerics.Vectors.dll"/>
+				<File Id="SystemRuntimeCompilerServicesUnsafeDll"
+					  Name="System.Runtime.CompilerServices.Unsafe.dll"
+					  Source="$(var.SourceDir)\System.Runtime.CompilerServices.Unsafe.dll"/>
+				<File Id="SystemTextEncodingsWebDll"
+					  Name="System.Text.Encodings.Web.dll"
+					  Source="$(var.SourceDir)\System.Text.Encodings.Web.dll"/>
+				<File Id="SystemTextJsonDll"
+					  Name="System.Text.Json.dll"
+					  Source="$(var.SourceDir)\System.Text.Json.dll"/>
+				<File Id="SystemThreadingTasksExtensionsDll"
+					  Name="System.Threading.Tasks.Extensions.dll"
+					  Source="$(var.SourceDir)\System.Threading.Tasks.Extensions.dll"/>
+				<File Id="SystemValueTupleDll"
+					  Name="System.ValueTuple.dll"
+					  Source="$(var.SourceDir)\System.ValueTuple.dll"/>
+			</Component>			
 		</ComponentGroup>
 	</Fragment>
 </Wix>

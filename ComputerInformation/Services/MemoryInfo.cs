@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DBHelper;
+using System;
 using System.Management;
 using System.Threading.Tasks;
 
@@ -23,6 +24,7 @@ namespace DgzAIO.Services
                 catch (Exception ex)
                 {
                     Console.WriteLine($"RAM ma'lumotlarini olishda xatolik: {ex.Message}");
+                    SQLiteHelper.WriteError($"RAM ma'lumotlarini olishda xatolik: {ex.Message}");
                 }
                 return 0;
             });

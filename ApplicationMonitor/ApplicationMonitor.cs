@@ -1,4 +1,5 @@
-﻿using DgzAIO.Models;
+﻿using DBHelper;
+using DgzAIO.Models;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
@@ -42,42 +43,59 @@ namespace ApplicationMonitor
         private static async Task GetProgramsFromRegistry(RegistryKey rootKey, string keyPath,
             List<ProgramDetails> programs, HashSet<string> seenPrograms)
         {
-            using (var key = rootKey.OpenSubKey(keyPath))
+            try
             {
-                if (key == null) return;
-
-                foreach (var subKeyName in key.GetSubKeyNames())
+                using (var key = rootKey.OpenSubKey(keyPath))
                 {
-                    using (var subKey = key.OpenSubKey(subKeyName))
+                    if (key == null) return;
+
+                    foreach (var subKeyName in key.GetSubKeyNames())
                     {
-                        string name = subKey?.GetValue("DisplayName")?.ToString();
-                        if (string.IsNullOrEmpty(name) || seenPrograms.Contains(name)) continue;
-                        seenPrograms.Add(name);
-
-                        if (subKey?.GetValue("NoDisplay") is int noDisplay && noDisplay == 1) continue;
-                        if (subKey?.GetValue("SystemComponent") is int systemComponent && systemComponent == 1) continue;
-                        if (subKey?.GetValue("ReleaseType")?.ToString()?.IndexOf("Update", StringComparison.OrdinalIgnoreCase) >= 0) continue;
-                        if (subKey?.GetValue("ParentKeyName")?.ToString()?.Equals("OperatingSystem", StringComparison.OrdinalIgnoreCase) == true) continue;
-
-                        string version = subKey?.GetValue("DisplayVersion")?.ToString();
-                        string installLocation = subKey?.GetValue("InstallLocation")?.ToString();
-                        bool isWindowsInstaller = subKey?.GetValue("WindowsInstaller") is int installer && installer == 1;
-                        object registrySize = subKey?.GetValue("EstimatedSize");
-
-                        int? size = await GetProgramSizeSmartAsync(name, installLocation, registrySize);
-
-                        programs.Add(new ProgramDetails
+                        try
                         {
-                            Name = name,
-                            Size = size,
-                            Type = isWindowsInstaller ? "Windows Installer" : "User",
-                            InstalledDate = ParseInstallDate(subKey?.GetValue("InstallDate")?.ToString()),
-                            Version = version
-                        });
+                            using (var subKey = key.OpenSubKey(subKeyName))
+                            {
+                                string name = subKey?.GetValue("DisplayName")?.ToString();
+                                if (string.IsNullOrEmpty(name) || seenPrograms.Contains(name)) continue;
+                                seenPrograms.Add(name);
+
+                                if (subKey?.GetValue("NoDisplay") is int noDisplay && noDisplay == 1) continue;
+                                if (subKey?.GetValue("SystemComponent") is int systemComponent && systemComponent == 1) continue;
+                                if (subKey?.GetValue("ReleaseType")?.ToString()?.IndexOf("Update", StringComparison.OrdinalIgnoreCase) >= 0) continue;
+                                if (subKey?.GetValue("ParentKeyName")?.ToString()?.Equals("OperatingSystem", StringComparison.OrdinalIgnoreCase) == true) continue;
+
+                                string version = subKey?.GetValue("DisplayVersion")?.ToString();
+                                string installLocation = subKey?.GetValue("InstallLocation")?.ToString();
+                                bool isWindowsInstaller = subKey?.GetValue("WindowsInstaller") is int installer && installer == 1;
+                                object registrySize = subKey?.GetValue("EstimatedSize");
+
+                                int? size = await GetProgramSizeSmartAsync(name, installLocation, registrySize);
+
+                                programs.Add(new ProgramDetails
+                                {
+                                    Name = name,
+                                    Size = size,
+                                    Type = isWindowsInstaller ? "Windows Installer" : "User",
+                                    InstalledDate = ParseInstallDate(subKey?.GetValue("InstallDate")?.ToString()),
+                                    Version = version
+                                });
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Xatolik yuz berdi: {ex.Message}");
+                            SQLiteHelper.WriteError($"Registry o‘qishda xatolik: {ex.Message}");
+                        }
                     }
                 }
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Registry o‘qishda xatolik: {ex.Message}");
+                SQLiteHelper.WriteError($"Registry o‘qishda xatolik: {ex.Message}");
+            }
         }
+
 
         private static async Task<int?> GetProgramSizeSmartAsync(string programName, string installLocation, object registrySize)
         {
@@ -113,9 +131,9 @@ namespace ApplicationMonitor
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"WMI orqali hajmni olishda xato: {ex.Message}");
+                
             }
             return null;
         }
@@ -132,11 +150,12 @@ namespace ApplicationMonitor
                                            .Select(f => new FileInfo(f).Length)
                                            .Sum());
 
-                return (int?)(size / 1024 / 1024); // MB
+                return (int?)(size / 1024 / 1024); 
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Fayllar hajmini hisoblashda xato: {ex.Message}");
+                SQLiteHelper.WriteError($"Fayllar hajmini hisoblashda xato: {ex.Message}");
                 return null;
             }
         }

@@ -1,4 +1,5 @@
 ﻿using ComputerInformation;
+using DBHelper;
 using DgzAIO.Models;
 using Newtonsoft.Json;
 using System;
@@ -31,6 +32,8 @@ namespace DgzAIO.HttpService
 
                 var response = await client.PostAsync(BaseUrl, content);
                 int statusCode = (int)response.StatusCode;
+                Console.WriteLine($"RESPONSE URL: {response.RequestMessage}");
+                Console.WriteLine($"RESPONSE : {response}");
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -50,6 +53,7 @@ namespace DgzAIO.HttpService
             catch (Exception ex)
             {
                 Console.WriteLine($"API ga so'rov yuborishda xatolik: {ex.Message}");
+                SQLiteHelper.WriteError($"API ga so'rov yuborishda xatolik: {ex.Message}");
                 return (null, 500);
             }
         }
@@ -80,20 +84,23 @@ namespace DgzAIO.HttpService
             catch (HttpRequestException httpEx)
             {
                 Console.WriteLine($"[HTTP Xatolik]: {httpEx.Message}");
+                SQLiteHelper.WriteError($"HTTP Xatolik: {httpEx.Message}");
             }
             catch (TaskCanceledException)
             {
                 Console.WriteLine("[HTTP Xatolik]: So‘rov vaqt chegarasidan oshib ketdi.");
+                SQLiteHelper.WriteError("HTTP Xatolik: So‘rov vaqt chegarasidan oshib ketdi.");
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[Noma'lum xatolik]: {ex.Message}");
+                SQLiteHelper.WriteError($"Noma'lum xatolik: {ex.Message}");
             }
 
             return false;
         }
 
-        public static async Task<bool> SendProgramInfo(Task<List<ProgramDetails>> programs)
+        public static async Task<bool> SendProgramInfo(List<ProgramDetails> programs)
         {
             return await SendData(BaseUrlForApps, programs);
         }

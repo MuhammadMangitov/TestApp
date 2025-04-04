@@ -23,6 +23,7 @@ namespace DgzAIO.Services
                 catch (Exception ex)
                 {
                     Console.WriteLine($"CPU haqida ma'lumot olishda xatolik: {ex.Message}");
+                    DBHelper.SQLiteHelper.WriteError($"CPU haqida ma'lumot olishda xatolik: {ex.Message}");
                 }
                 return "Noma'lum";
             });
@@ -44,6 +45,7 @@ namespace DgzAIO.Services
                 catch (Exception ex)
                 {
                     Console.WriteLine($"CPU yadrolari haqida ma'lumot olishda xatolik: {ex.Message}");
+                    DBHelper.SQLiteHelper.WriteError($"CPU yadrolari haqida ma'lumot olishda xatolik: {ex.Message}");
                 }
                 return 0;
             });
@@ -65,6 +67,7 @@ namespace DgzAIO.Services
                 catch (Exception ex)
                 {
                     Console.WriteLine($"CPU modeli haqida ma'lumot olishda xatolik: {ex.Message}");
+                    DBHelper.SQLiteHelper.WriteError($"CPU modeli haqida ma'lumot olishda xatolik: {ex.Message}");
                 }
                 return "Noma'lum";
             });

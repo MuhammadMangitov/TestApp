@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using System.ServiceProcess;
 using System.Threading;
-using DgzAIO; // DgzAIO namespace ni qo'shish
 
 namespace DgzAIOWindowsService
 {
     public partial class Service1 : ServiceBase
     {
-        private Thread workerThread; 
+        private Thread workerThread;
 
         public Service1()
         {
@@ -17,44 +17,47 @@ namespace DgzAIOWindowsService
 
         protected override void OnStart(string[] args)
         {
-            workerThread = new Thread(new ThreadStart(StartDgzAIO));
-            workerThread.IsBackground = true;
+            workerThread = new Thread(StartDgzAIO)
+            {
+                IsBackground = true
+            };
             workerThread.Start();
         }
 
         private void StartDgzAIO()
         {
             try
-                {
-                    ProcessStartInfo startInfo = new ProcessStartInfo
-                    {
-                        FileName = @"C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Debug\DgzAIO.exe",
-                        UseShellExecute = false,
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true,
-                        CreateNoWindow = true
-                    };
+            {
+                string serviceDir = AppDomain.CurrentDomain.BaseDirectory;
+                string exePath = Path.Combine(serviceDir, "DgzAIO.exe");
 
-                    Process process = new Process { StartInfo = startInfo };
-                    process.Start();
-                    string output = process.StandardOutput.ReadToEnd();
-                    string error = process.StandardError.ReadToEnd();
-
-                    System.IO.File.AppendAllText(@"C:\LogDgz\MyServiceLog.txt", output);
-                    System.IO.File.AppendAllText(@"C:\LogDgz\MyServiceErrors.txt", error);
-                }
-                catch (Exception ex)
+                ProcessStartInfo startInfo = new ProcessStartInfo
                 {
-                    string logPath = @"C:\LogDgz\MyServiceLog.txt";
-                    string errorMessage = $"[{DateTime.Now}] Xatolik: {ex.ToString()}\n";
-                    System.IO.File.AppendAllText(logPath, errorMessage);
-                }
-     }
-    protected override void OnStop()
-    {
+                    FileName = exePath,
+                    UseShellExecute = true,  
+                    Verb = "runas",  
+                    WindowStyle = ProcessWindowStyle.Hidden 
+                };
+
+                Process process = new Process { StartInfo = startInfo };
+                process.Start();
+                process.WaitForExit(); 
+
+                File.AppendAllText(@"C:\LogDgz\MyServiceLog.txt", $"[{DateTime.Now}] DgzAIO ishga tushdi\n");
+            }
+            catch (Exception ex)
+            {
+                string logPath = @"C:\LogDgz\MyServiceErrors.txt";
+                string errorMessage = $"[{DateTime.Now}] Xatolik: {ex}\n";
+                File.AppendAllText(logPath, errorMessage);
+            }
+        }
+
+        protected override void OnStop()
+        {
             if (workerThread != null && workerThread.IsAlive)
             {
-                workerThread.Abort();
+                workerThread.Join(3000); 
             }
         }
     }

@@ -20,6 +20,7 @@ namespace DgzAIO.HttpService
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
             Configuration = builder.Build();
+            Console.WriteLine("[ConfigurationManager] appsettings.json muvaffaqiyatli o‘qildi.");
         }
 
         public static string GetBaseUrl() => Configuration["ApiConfig:BaseUrl"];
