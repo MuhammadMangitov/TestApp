@@ -15,17 +15,23 @@ namespace DgzAIO.HttpService
 
         static ConfigurationManager()
         {
-            var builder = new ConfigurationBuilder()
-                .SetBasePath(AppContext.BaseDirectory)
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+            try
+            {
+                var builder = new ConfigurationBuilder()
+                    .SetBasePath(AppContext.BaseDirectory)
+                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
-            Configuration = builder.Build();
-            Console.WriteLine("[ConfigurationManager] appsettings.json muvaffaqiyatli o‘qildi.");
+                Configuration = builder.Build();
+                Console.WriteLine("[ConfigurationManager] appsettings.json muvaffaqiyatli o‘qildi.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ConfigurationManager] Xatolik yuz berdi: {ex.Message}");
+            }
         }
 
         public static string GetBaseUrl() => Configuration["ApiConfig:BaseUrl"];
         public static string GetBaseUrlForApps() => Configuration["ApiConfig:BaseUrlForApps"];
-        public static string GetDbPath() => Configuration["DatabaseSettings:DbPath"];
         public static string GetSocketServerUrl() => Configuration["SocketSettings:ServerUrl"];
         public static string GetInstallerApiUrl() => Configuration["SocketSettings:InstallerApiUrl"];
         public static string GetUpdateApiUrl() => Configuration["SocketSettings:UpdateApiUrl"];

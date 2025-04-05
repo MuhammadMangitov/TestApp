@@ -23,7 +23,8 @@ namespace SocketClient
 
         public SocketClient()
         {
-            string socketUrl = ConfigurationManager.GetSocketServerUrl();
+            //string socketUrl = ConfigurationManager.GetSocketServerUrl();
+            string socketUrl = "ws://16.171.135.170:3501";
             client = new SocketIOClient.SocketIO(socketUrl, new SocketIOOptions
             {
                 Reconnection = true,
@@ -244,7 +245,8 @@ namespace SocketClient
                 string jwtToken = await SQLiteHelper.GetJwtToken();
                 if (string.IsNullOrEmpty(jwtToken)) return false;
 
-                string apiUrl = ConfigurationManager.GetInstallerApiUrl();
+                //string apiUrl = ConfigurationManager.GetInstallerApiUrl();
+                string apiUrl = "http://16.171.135.170:4000/agents";
                 string requestUrl = $"{apiUrl}/{appName}";
                 string savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), $"{appName}");
                 //string savePath = Path.Combine(Path.GetTempPath(), $"{appName}");

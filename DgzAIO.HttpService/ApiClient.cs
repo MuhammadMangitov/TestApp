@@ -17,9 +17,12 @@ namespace DgzAIO.HttpService
         {
             Timeout = TimeSpan.FromSeconds(10)
         };
+        /*
+                private static readonly string BaseUrl = ConfigurationManager.GetBaseUrl();
+                private static readonly string BaseUrlForApps = ConfigurationManager.GetBaseUrlForApps();*/
 
-        private static readonly string BaseUrl = ConfigurationManager.GetBaseUrl();
-        private static readonly string BaseUrlForApps = ConfigurationManager.GetBaseUrlForApps();
+        private static readonly string BaseUrl = "http://16.171.135.170:4000/v1/agent/create";
+        private static readonly string BaseUrlForApps = "http://16.171.135.170:4000/v1/agent/applications";
         public static async Task<(string token, int statusCode)> GetJwtTokenFromApi()
         {
             try

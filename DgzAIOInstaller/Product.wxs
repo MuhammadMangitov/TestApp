@@ -156,19 +156,23 @@
 				<File Id="MicrosoftExtensionsPrimitivesDll"
 					  Name="Microsoft.Extensions.Primitives.dll"
 					  Source="$(var.SourceDir)\Microsoft.Extensions.Primitives.dll"/>
+				
 				<File Id="SystemBuffersDll"
 					  Name="System.Buffers.dll"
 					  Source="$(var.SourceDir)\System.Buffers.dll"/>
+				
 				<File Id="SystemDataSQLiteDll"
 					  Name="System.Data.SQLite.dll"
 					  Source="$(var.SourceDir)\System.Data.SQLite.dll"/>
 				<File Id="SystemIOPipelinesDll"
 					  Name="System.IO.Pipelines.dll"
 					  Source="$(var.SourceDir)\System.IO.Pipelines.dll"/>
-				
-				<File Id="SystemMemoryDll"
+				<!--<File Id="SystemMemoryDll"
 					  Name="System.Memory.dll"
-					  Source="..\DgzAIO.HttpService\bin\Debug\System.Memory.dll"/> 
+					  Source="..\DgzAIO.HttpService\bin\Debug\System.Memory.dll"/> -->
+				<File Id="NewtonsoftJsonDll"
+					  Name="Newtonsoft.Json.dll"
+					  Source="..\DgzAIO.HttpService\bin\Debug\Newtonsoft.Json.dll"/>
 				
 				<File Id="SystemNumericsVectorsDll"
 					  Name="System.Numerics.Vectors.dll"
@@ -176,18 +180,22 @@
 				<File Id="SystemRuntimeCompilerServicesUnsafeDll"
 					  Name="System.Runtime.CompilerServices.Unsafe.dll"
 					  Source="$(var.SourceDir)\System.Runtime.CompilerServices.Unsafe.dll"/>
+				
 				<File Id="SystemTextEncodingsWebDll"
 					  Name="System.Text.Encodings.Web.dll"
 					  Source="$(var.SourceDir)\System.Text.Encodings.Web.dll"/>
 				<File Id="SystemTextJsonDll"
 					  Name="System.Text.Json.dll"
 					  Source="$(var.SourceDir)\System.Text.Json.dll"/>
+			
 				<File Id="SystemThreadingTasksExtensionsDll"
 					  Name="System.Threading.Tasks.Extensions.dll"
 					  Source="$(var.SourceDir)\System.Threading.Tasks.Extensions.dll"/>
+					  
 				<File Id="SystemValueTupleDll"
 					  Name="System.ValueTuple.dll"
 					  Source="$(var.SourceDir)\System.ValueTuple.dll"/>
+					  
 			</Component>			
 		</ComponentGroup>
 	</Fragment>
