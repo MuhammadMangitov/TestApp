@@ -13,7 +13,7 @@ using DgzAIO.HttpService;
 using DBHelper;
 using SocketClient.Models;
 
-namespace SocketClient
+namespace SocketClient  
 {
     public class SocketClient
     {
@@ -73,8 +73,11 @@ namespace SocketClient
         public async Task<bool> StartSocketListener()
         {
             try
-            {
+            {   
                 string jwtToken = await SQLiteHelper.GetJwtToken();
+                
+                Console.WriteLine($"JWT Token socket uchun : {jwtToken}"); // Tokenni tekshirish uchun
+
                 if (string.IsNullOrEmpty(jwtToken))
                 {
                     Console.WriteLine("Token topilmadi!");

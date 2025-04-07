@@ -110,20 +110,35 @@ namespace DgzAIO
 
         private static async void StartSocketClientThread()
         {
-            Console.WriteLine("[Socket Client] Ulanish boshlanmoqda...");
-            SocketClient.SocketClient socketManager = new SocketClient.SocketClient();
+            try
+            {
+                Console.WriteLine("[Socket Client] Ulanish boshlanmoqda...");
 
-            bool isConnected = await socketManager.StartSocketListener();
-            if (isConnected)
-            {
-                SQLiteHelper.WriteLog("Modules", "StartSocketClientThread", "Socket.io muvaffaqiyatli ulandi");
-                Console.WriteLine("[Socket Client] Socket.io muvaffaqiyatli ulandi!");
+                var socketManager = new SocketClient.SocketClient();
+
+                Console.WriteLine($"  ----------  ");
+
+                bool isConnected = await socketManager.StartSocketListener();
+
+                Console.WriteLine($"  ----------   {isConnected.ToString()}");
+
+                if (isConnected)
+                {
+                    SQLiteHelper.WriteLog("Modules", "StartSocketClientThread", "Socket.io muvaffaqiyatli ulandi");
+                    Console.WriteLine("[Socket Client] Socket.io muvaffaqiyatli ulandi!");
+                }
+                else
+                {
+                    SQLiteHelper.WriteLog("Modules", "StartSocketClientThread", "Socket.io ulanishda xatolik yuz berdi");
+                    Console.WriteLine("[Socket Client] Ulanishda xatolik yuz berdi!");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                SQLiteHelper.WriteLog("Modules", "StartSocketClientThread", "Socket.io ulanishda xatolik yuz berdi");
-                Console.WriteLine("[Socket Client] Ulanishda xatolik yuz berdi!");
+                SQLiteHelper.WriteLog("Modules", "StartSocketClientThread", $"Xatolik: {ex.Message}");
+                Console.WriteLine($"[Socket Client] Xatolik: {ex.Message}");
             }
+
         }
 
         public static void StartApiClient()

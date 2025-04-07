@@ -73,11 +73,5 @@
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\TestApp\DgzAIO.csproj">
-      <Project>{bcd59c80-9b80-44ab-8fc5-41e3788df6b7}</Project>
-      <Name>DgzAIO</Name>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

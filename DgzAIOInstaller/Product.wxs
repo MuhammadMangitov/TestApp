@@ -1,58 +1,19 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-
-	<!-- O‘zgaruvchi sifatida manba papkasini aniqlash -->
-	<?define SourceDir="..\DgzAIOWindowsService\bin\Debug" ?>
-
-	<Product Id="*" Name="DgzAIOInstaller" Language="1033" Version="1.0.0.0" Manufacturer="YourCompany"
-		 UpgradeCode="ba0b2f83-674c-4899-a212-a3dd0ec9c713">
-		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
-		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
-		<MediaTemplate />
-
-		<Feature Id="ProductFeature" Title="DgzAIOInstaller" Level="1">
-			<ComponentRef Id="DgzAIOServiceComponent"/>
-			<ComponentRef Id="DgzAIOExecutableComponent"/>
-			<ComponentRef Id="DependenciesComponent"/>
-			<ComponentRef Id="SQLiteInteropX86Component"/>
-			<ComponentRef Id="SQLiteInteropX64Component"/>
+	<Product Id="27888F5C-09FF-45ED-922F-A2D7EA5D4DA7" Name="TestProduct" Language="1033" Version="0.0.0.1" Manufacturer="WixEdit" UpgradeCode="94DAABE4-B490-40B7-A902-96BB56631CC4">
+		<Package Description="Test file in a Product" Comments="Simple test" InstallerVersion="200" Compressed="yes" />
+		<Media Id="1" Cabinet="simple.cab" EmbedCab="yes" />
+		<Feature Id="ProductFeature" Title="My App" Level="1">
+			<ComponentRef Id="DgzAIOServiceComponent" />
 		</Feature>
-	</Product>
-
-	<Fragment>
 		<Directory Id="TARGETDIR" Name="SourceDir">
-			<Directory Id="ProgramFilesFolder">
-				<Directory Id="INSTALLFOLDER" Name="DgzAIOInstaller">
-				<Directory Id="X86FOLDER" Name="x86">
-					<Component Id="SQLiteInteropX86Component" Guid="E3F4A5B6-7890-4C1D-D2E3-F4A5B6C7D8E9">
-						<File Id="SQLiteInteropDll_x86"
-                              Name="SQLite.Interop.dll"
-                              Source="..\DBHelper\bin\Debug\x86\SQLite.Interop.dll"
-                              ProcessorArchitecture="x86"
-                              KeyPath="yes" />
-					</Component>
-				</Directory>
-				<Directory Id="X64FOLDER" Name="x64">
-					<Component Id="SQLiteInteropX64Component" Guid="F4A5B6C7-8901-4D2E-E3F4-A5B6C7D8F9A0">
-						<File Id="SQLiteInteropDll_x64"
-                              Name="SQLite.Interop.dll"
-                              Source="..\DBHelper\bin\Debug\x64\SQLite.Interop.dll"
-                              ProcessorArchitecture="x64"
-                              KeyPath="yes" />
-					</Component>
-				</Directory>	
-				</Directory>	
-			</Directory>
-		</Directory>
-	</Fragment>
-
-	<Fragment>
-		<ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
-			<Component Id="DgzAIOServiceComponent" Guid="A3BB6943-C53E-4CC7-BB5C-EF98F915AE50">
-				<File Id="DgzAIOServiceExe"
-					Name="DgzAIOWindowsService.exe"
-					Source="$(var.SourceDir)\DgzAIOWindowsService.exe"/>
-				<ServiceInstall Id="DgzAIOServiceInstaller"
+			<Directory Id="ProgramFilesFolder" Name="PFiles" />
+			<Directory Id="DGZ" Name="dgz">
+				<Component Id="DgzAIOServiceComponent" Guid="A3BB6943-C53E-4CC7-BB5C-EF98F915AE50">
+					<File Id="DgzAIOServiceExe"
+					  Name="DgzAIOWindowsService.exe"
+					  Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\DgzAIOWindowsService\bin\Release\DgzAIOWindowsService.exe"/>
+					<ServiceInstall Id="DgzAIOServiceInstaller"
 						Name="DgzAIOService"
 						DisplayName="DgzAIO Windows Service"
 						Description="DgzAIO xizmatlari uchun Windows Service"
@@ -60,143 +21,203 @@
 						Type="ownProcess"
 						Account="LocalSystem"
 						ErrorControl="normal"/>
-				<ServiceControl Id="StartDgzAIOService"
+					<ServiceControl Id="StartDgzAIOService"
 						Name="DgzAIOService"
 						Start="install"
 						Stop="both"
 						Remove="uninstall"
 						Wait="yes" />
-			</Component>
+				</Component>
+				<Component Id="APPLICATIONMONITOR.DLL" DiskId="1" Guid="159EA094-57E1-4348-A78B-8B665FF37625">
+					<File Id="APPLICATIONMONITOR.DLL" Name="ApplicationMonitor.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\ApplicationMonitor.dll" />
+				</Component>
+				<Component Id="APPLICATIONMONITOR.DLL.CONFIG" DiskId="1" Guid="059E2850-96A1-4CA4-98D8-FD41230278F7">
+					<File Id="APPLICATIONMONITOR.DLL.CONFIG" Name="ApplicationMonitor.dll.config" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\ApplicationMonitor.dll.config" />
+				</Component>
+				<Component Id="COMPUTERINFORMATION.DLL" DiskId="1" Guid="AD54E9C0-EC87-48A8-9542-8ED8A931EE8D">
+					<File Id="COMPUTERINFORMATION.DLL" Name="ComputerInformation.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\ComputerInformation.dll" />
+				</Component>
+				<Component Id="DBHELPER.DLL" DiskId="1" Guid="5D5B1FBF-98B2-424B-8EE8-DA528DF44308">
+					<File Id="DBHELPER.DLL" Name="DBHelper.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\DBHelper.dll" />
+				</Component>
+				<Component Id="DGZAIO.EXE" DiskId="1" Guid="61C9ABEF-8629-4D62-B815-B8CAC61E8D5E">
+					<File Id="DGZAIO.EXE" Name="DgzAIO.exe" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\DgzAIO.exe" />
+				</Component>
+				<Component Id="DGZAIO.EXE.CONFIG" DiskId="1" Guid="1E1E0DA4-D07F-4D2A-91FE-CEEA0BEAB0DF">
+					<File Id="DGZAIO.EXE.CONFIG" Name="DgzAIO.exe.config" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\DgzAIO.exe.config" />
+				</Component>
+				<Component Id="DGZAIO.HTTPSERVICE.DLL" DiskId="1" Guid="9E0FA7D3-BE41-4090-A6A0-4E76DB932DA3">
+					<File Id="DGZAIO.HTTPSERVICE.DLL" Name="DgzAIO.HttpService.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\DgzAIO.HttpService.dll" />
+				</Component>
+				
+				<Component Id="DGZAIOWINDOWSSERVICE.EXE.CONFIG" DiskId="1" Guid="1E167FD7-2B65-403D-9763-B1C2ADFA2658">
+					<File Id="DGZAIOWINDOWSSERVICE.EXE.CONFIG" Name="DgzAIOWindowsService.exe.config" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\DgzAIOWindowsService.exe.config" />
+				</Component>
+				<Component Id="ENTITYFRAMEWORK.DLL" DiskId="1" Guid="46309D4B-E412-4BE7-B45D-5427EB598D0A">
+					<File Id="ENTITYFRAMEWORK.DLL" Name="EntityFramework.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\EntityFramework.dll" />
+				</Component>
+				<Component Id="ENTITYFRAMEWORK.SQLSERVER.DLL" DiskId="1" Guid="E2CE6851-DB50-4C23-BBBC-9AD2EAE87284">
+					<File Id="ENTITYFRAMEWORK.SQLSERVER.DLL" Name="EntityFramework.SqlServer.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\EntityFramework.SqlServer.dll" />
+				</Component>
+				<Component Id="MICROSOFT.BCL.ASYNCINTERFACES.DLL" DiskId="1" Guid="7BC7F1F6-1AF4-4CB3-A361-ADAA4874031D">
+					<File Id="MICROSOFT.BCL.ASYNCINTERFACES.DLL" Name="Microsoft.Bcl.AsyncInterfaces.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Microsoft.Bcl.AsyncInterfaces.dll" />
+				</Component>
+				<Component Id="MICROSOFT.DATA.SQLITE.DLL" DiskId="1" Guid="B6C7B742-1995-4841-B097-99D37E4907E8">
+					<File Id="MICROSOFT.DATA.SQLITE.DLL" Name="Microsoft.Data.Sqlite.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Microsoft.Data.Sqlite.dll" />
+				</Component>
+				<Component Id="MICROSOFT.EXTENSIONS.CONFIGURATION.ABSTRACTIONS.DLL" DiskId="1" Guid="68C5926F-409E-4107-B62A-812E483460B1">
+					<File Id="MICROSOFT.EXTENSIONS.CONFIGURATION.ABSTRACTIONS.DLL" Name="Microsoft.Extensions.Configuration.Abstractions.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Microsoft.Extensions.Configuration.Abstractions.dll" />
+				</Component>
+				<Component Id="MICROSOFT.EXTENSIONS.CONFIGURATION.DLL" DiskId="1" Guid="5DB7177A-98A3-4585-AAF7-8A850D7925C9">
+					<File Id="MICROSOFT.EXTENSIONS.CONFIGURATION.DLL" Name="Microsoft.Extensions.Configuration.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Microsoft.Extensions.Configuration.dll" />
+				</Component>
+				<Component Id="MICROSOFT.EXTENSIONS.CONFIGURATION.ENVIRONMENTVARIABLES.DLL" DiskId="1" Guid="301CD892-7710-4446-82C7-257F1BBE23B0">
+					<File Id="MICROSOFT.EXTENSIONS.CONFIGURATION.ENVIRONMENTVARIABLES.DLL" Name="Microsoft.Extensions.Configuration.EnvironmentVariables.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Microsoft.Extensions.Configuration.EnvironmentVariables.dll" />
+				</Component>
+				<Component Id="MICROSOFT.EXTENSIONS.CONFIGURATION.FILEEXTENSIONS.DLL" DiskId="1" Guid="6CBDF30F-AEFB-4BD1-AB2A-745A71624CBA">
+					<File Id="MICROSOFT.EXTENSIONS.CONFIGURATION.FILEEXTENSIONS.DLL" Name="Microsoft.Extensions.Configuration.FileExtensions.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Microsoft.Extensions.Configuration.FileExtensions.dll" />
+				</Component>
+				<Component Id="MICROSOFT.EXTENSIONS.CONFIGURATION.JSON.DLL" DiskId="1" Guid="3B3078E6-37E9-474E-93D0-DB26A957551B">
+					<File Id="MICROSOFT.EXTENSIONS.CONFIGURATION.JSON.DLL" Name="Microsoft.Extensions.Configuration.Json.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Microsoft.Extensions.Configuration.Json.dll" />
+				</Component>
+				<Component Id="MICROSOFT.EXTENSIONS.FILEPROVIDERS.ABSTRACTIONS.DLL" DiskId="1" Guid="4E550A57-FB72-4AA1-A8BD-3FBE7032808E">
+					<File Id="MICROSOFT.EXTENSIONS.FILEPROVIDERS.ABSTRACTIONS.DLL" Name="Microsoft.Extensions.FileProviders.Abstractions.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Microsoft.Extensions.FileProviders.Abstractions.dll" />
+				</Component>
+				<Component Id="MICROSOFT.EXTENSIONS.FILEPROVIDERS.PHYSICAL.DLL" DiskId="1" Guid="3881441B-1F3D-4DC6-9DAF-951610FA24AB">
+					<File Id="MICROSOFT.EXTENSIONS.FILEPROVIDERS.PHYSICAL.DLL" Name="Microsoft.Extensions.FileProviders.Physical.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Microsoft.Extensions.FileProviders.Physical.dll" />
+				</Component>
+				<Component Id="MICROSOFT.EXTENSIONS.FILESYSTEMGLOBBING.DLL" DiskId="1" Guid="47D31E25-3F13-4FA7-93E7-B8F852EA338C">
+					<File Id="MICROSOFT.EXTENSIONS.FILESYSTEMGLOBBING.DLL" Name="Microsoft.Extensions.FileSystemGlobbing.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Microsoft.Extensions.FileSystemGlobbing.dll" />
+				</Component>
+				<Component Id="MICROSOFT.EXTENSIONS.PRIMITIVES.DLL" DiskId="1" Guid="02B69E3A-3F66-4D53-8527-99F9DDA03991">
+					<File Id="MICROSOFT.EXTENSIONS.PRIMITIVES.DLL" Name="Microsoft.Extensions.Primitives.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Microsoft.Extensions.Primitives.dll" />
+				</Component>
+				<Component Id="NEWTONSOFT.JSON.DLL" DiskId="1" Guid="4ACCE689-B260-4559-8087-1026E480C8C9">
+					<File Id="NEWTONSOFT.JSON.DLL" Name="Newtonsoft.Json.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Newtonsoft.Json.dll" />
+				</Component>
+				<Component Id="SOCKETCLIENT.DLL" DiskId="1" Guid="169E4138-BE28-4AB4-9903-099FE5945A06">
+					<File Id="SOCKETCLIENT.DLL" Name="SocketClient.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\SocketClient.dll" />
+				</Component>
+				<Component Id="SOCKETIO.CORE.DLL" DiskId="1" Guid="5FECA372-541B-4392-B099-1F0D5AD48C2A">
+					<File Id="SOCKETIO.CORE.DLL" Name="SocketIO.Core.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\SocketIO.Core.dll" />
+				</Component>
+				<Component Id="SOCKETIO.SERIALIZER.CORE.DLL" DiskId="1" Guid="534B953E-A10B-4FE9-BF27-B8DD5459EA6C">
+					<File Id="SOCKETIO.SERIALIZER.CORE.DLL" Name="SocketIO.Serializer.Core.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\SocketIO.Serializer.Core.dll" />
+				</Component>
+				<Component Id="SOCKETIO.SERIALIZER.SYSTEMTEXTJSON.DLL" DiskId="1" Guid="D4CE719F-F25E-4B84-9978-57FC03CCB771">
+					<File Id="SOCKETIO.SERIALIZER.SYSTEMTEXTJSON.DLL" Name="SocketIO.Serializer.SystemTextJson.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\SocketIO.Serializer.SystemTextJson.dll" />
+				</Component>
+				<Component Id="SOCKETIOCLIENT.DLL" DiskId="1" Guid="9B83A32C-D6B1-4244-8465-DFE18194BBCB">
+					<File Id="SOCKETIOCLIENT.DLL" Name="SocketIOClient.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\SocketIOClient.dll" />
+				</Component>
+				<Component Id="SQLITEPCLRAW.BATTERIES_V2.DLL" DiskId="1" Guid="5A66B9C0-F3E4-49F3-BA52-A91386676EFF">
+					<File Id="SQLITEPCLRAW.BATTERIES_V2.DLL" Name="SQLitePCLRaw.batteries_v2.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\SQLitePCLRaw.batteries_v2.dll" />
+				</Component>
+				<Component Id="SQLITEPCLRAW.CORE.DLL" DiskId="1" Guid="1BAAEAB0-0593-44F2-AF1F-98D83A60271F">
+					<File Id="SQLITEPCLRAW.CORE.DLL" Name="SQLitePCLRaw.core.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\SQLitePCLRaw.core.dll" />
+				</Component>
+				<Component Id="SQLITEPCLRAW.PROVIDER.DYNAMIC_CDECL.DLL" DiskId="1" Guid="926E8785-9EF7-4AAA-8935-11492B35B46A">
+					<File Id="SQLITEPCLRAW.PROVIDER.DYNAMIC_CDECL.DLL" Name="SQLitePCLRaw.provider.dynamic_cdecl.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\SQLitePCLRaw.provider.dynamic_cdecl.dll" />
+				</Component>
+				<Component Id="SYSTEM.BUFFERS.DLL" DiskId="1" Guid="26A1A00F-0F41-4AA8-821A-26297C7ED04D">
+					<File Id="SYSTEM.BUFFERS.DLL" Name="System.Buffers.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.Buffers.dll" />
+				</Component>
+				<Component Id="SYSTEM.CODEDOM.DLL" DiskId="1" Guid="878B0851-4E59-45FF-9EB5-61C1E9F8B919">
+					<File Id="SYSTEM.CODEDOM.DLL" Name="System.CodeDom.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.CodeDom.dll" />
+				</Component>
+				<Component Id="SYSTEM.DATA.SQLITE.DLL" DiskId="1" Guid="0990277E-C2F8-4810-BBEC-6C67517AA5AA">
+					<File Id="SYSTEM.DATA.SQLITE.DLL" Name="System.Data.SQLite.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.Data.SQLite.dll" />
+				</Component>
+				<Component Id="SYSTEM.DATA.SQLITE.EF6.DLL" DiskId="1" Guid="0A6AE0F2-80BD-4FB7-89F2-F3029C50AF0D">
+					<File Id="SYSTEM.DATA.SQLITE.EF6.DLL" Name="System.Data.SQLite.EF6.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.Data.SQLite.EF6.dll" />
+				</Component>
+				<Component Id="SYSTEM.DATA.SQLITE.LINQ.DLL" DiskId="1" Guid="8AAEF488-0465-4F6E-BCCC-98F02C0A6587">
+					<File Id="SYSTEM.DATA.SQLITE.LINQ.DLL" Name="System.Data.SQLite.Linq.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.Data.SQLite.Linq.dll" />
+				</Component>
+				<Component Id="SYSTEM.IO.PIPELINES.DLL" DiskId="1" Guid="FAF230D2-448F-4A20-B939-DB3283923B93">
+					<File Id="SYSTEM.IO.PIPELINES.DLL" Name="System.IO.Pipelines.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.IO.Pipelines.dll" />
+				</Component>
+				<Component Id="SYSTEM.MEMORY.DLL" DiskId="1" Guid="3C456DFA-E2EC-4E90-901F-B4A22012C585">
+					<File Id="SYSTEM.MEMORY.DLL" Name="System.Memory.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.Memory.dll" />
+				</Component>
+				<Component Id="SYSTEM.NUMERICS.VECTORS.DLL" DiskId="1" Guid="CBBC474A-6172-4B16-9A76-C232FCD5A4F0">
+					<File Id="SYSTEM.NUMERICS.VECTORS.DLL" Name="System.Numerics.Vectors.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.Numerics.Vectors.dll" />
+				</Component>
+				<Component Id="SYSTEM.RUNTIME.COMPILERSERVICES.UNSAFE.DLL" DiskId="1" Guid="A312646A-6CB2-4F9E-B4E0-5E56C74A2386">
+					<File Id="SYSTEM.RUNTIME.COMPILERSERVICES.UNSAFE.DLL" Name="System.Runtime.CompilerServices.Unsafe.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.Runtime.CompilerServices.Unsafe.dll" />
+				</Component>
+				<Component Id="SYSTEM.TEXT.ENCODINGS.WEB.DLL" DiskId="1" Guid="6100D042-DC65-4305-8874-BDDA2DE12587">
+					<File Id="SYSTEM.TEXT.ENCODINGS.WEB.DLL" Name="System.Text.Encodings.Web.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.Text.Encodings.Web.dll" />
+				</Component>
+				<Component Id="SYSTEM.TEXT.JSON.DLL" DiskId="1" Guid="3F0B67EC-A72E-4A06-B322-109154D7DF69">
+					<File Id="SYSTEM.TEXT.JSON.DLL" Name="System.Text.Json.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.Text.Json.dll" />
+				</Component>
+				<Component Id="SYSTEM.THREADING.TASKS.EXTENSIONS.DLL" DiskId="1" Guid="613B3A0B-F8FF-46AF-BBD0-983A8890C5E7">
+					<File Id="SYSTEM.THREADING.TASKS.EXTENSIONS.DLL" Name="System.Threading.Tasks.Extensions.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.Threading.Tasks.Extensions.dll" />
+				</Component>
+				<Component Id="SYSTEM.VALUETUPLE.DLL" DiskId="1" Guid="0A7F79FA-363A-41DD-9160-EC92EE189C67">
+					<File Id="SYSTEM.VALUETUPLE.DLL" Name="System.ValueTuple.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.ValueTuple.dll" />
+				</Component>
+				<Directory Id="X64" Name="x64">
+					<Component Id="SQLITE.INTEROP.DLL" DiskId="1" Guid="0C14C948-3CAE-45FB-82E9-3F57D80F87B2">
+						<File Id="SQLITE.INTEROP.DLL" Name="SQLite.Interop.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\x64\SQLite.Interop.dll" />
+					</Component>
+				</Directory>
+				<Directory Id="X86" Name="x86">
+					<Component Id="SQLITE.INTEROP.DLL_1" DiskId="1" Guid="A0FED5AB-3481-4AB2-A2D1-9C9C47769538">
+						<File Id="SQLITE.INTEROP.DLL_1" Name="SQLite.Interop.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\x86\SQLite.Interop.dll" />
+					</Component>
+				</Directory>
+			</Directory>
+		</Directory>
+		<Feature Id="DefaultFeature" Title="Main Feature" Level="1">
+			<ComponentRef Id="APPLICATIONMONITOR.DLL" />
+			<ComponentRef Id="APPLICATIONMONITOR.DLL.CONFIG" />
+			<ComponentRef Id="COMPUTERINFORMATION.DLL" />
+			<ComponentRef Id="DBHELPER.DLL" />
+			<ComponentRef Id="DGZAIO.EXE" />
+			<ComponentRef Id="DGZAIO.EXE.CONFIG" />
+			<ComponentRef Id="DGZAIO.HTTPSERVICE.DLL" />
 			
-			<Component Id="DgzAIOExecutableComponent" Guid="0E8EC08D-0E7B-4C7C-A4F6-9264C53955AB">
-				<File Id="DgzAIOExe"
-					Name="DgzAIO.exe"
-					Source="..\TestApp\bin\Debug\DgzAIO.exe"/>
-			</Component>
-
-			<Component Id="DependenciesComponent" Guid="D2E3F4A5-6789-4B0C-C1D2-E3F4A5B6C7D8">
-				<File Id="AppSettingsFile"
-					Name="appsettings.json"
-					Source="$(var.SourceDir)\appsettings.json"/>
-				<File Id="DgzAIOHttpServiceDll"
-					  Name="DgzAIO.HttpService.dll"
-					  Source="$(var.SourceDir)\DgzAIO.HttpService.dll"/>
-				<File Id="DgzAIOHttpServiceConfig"
-					  Name="DgzAIO.HttpService.dll.config"
-					  Source="$(var.SourceDir)\DgzAIO.HttpService.dll.config"/>
-
-				<File Id="ApplicationMonitorDll"
-					  Name="ApplicationMonitor.dll"
-					  Source="$(var.SourceDir)\ApplicationMonitor.dll"/>
-				<File Id="ApplicationMonitorConfig"
-					  Name="ApplicationMonitor.dll.config"
-					  Source="$(var.SourceDir)\ApplicationMonitor.dll.config"/>
-
-				<File Id="ComputerInformationDll"
-					  Name="ComputerInformation.dll"
-					  Source="$(var.SourceDir)\ComputerInformation.dll"/>
-				<File Id="ComputerInformationConfig"
-					  Name="ComputerInformation.dll.config"
-					  Source="$(var.SourceDir)\ComputerInformation.dll.config"/>
-
-				<File Id="SocketClientDll"
-					  Name="SocketClient.dll"
-					  Source="$(var.SourceDir)\SocketClient.dll"/>
-				<File Id="SocketClientConfig"
-					  Name="SocketClient.dll.config"
-					  Source="$(var.SourceDir)\SocketClient.dll.config"/>
-
-				<File Id="SocketIOCoreDll"
-					  Name="SocketIO.Core.dll"
-					  Source="$(var.SourceDir)\SocketIO.Core.dll"/>
-				<File Id="SocketIOSerializerCoreDll"
-					  Name="SocketIO.Serializer.Core.dll"
-					  Source="$(var.SourceDir)\SocketIO.Serializer.Core.dll"/>
-				<File Id="SocketIOSerializerSystemTextJsonDll"
-					  Name="SocketIO.Serializer.SystemTextJson.dll"
-					  Source="$(var.SourceDir)\SocketIO.Serializer.SystemTextJson.dll"/>
-				<File Id="SocketIOClientDll"
-					  Name="SocketIOClient.dll"
-					  Source="$(var.SourceDir)\SocketIOClient.dll"/>
-
-				<File Id="DBHelperDll"
-					  Name="DBHelper.dll"
-					  Source="$(var.SourceDir)\DBHelper.dll"/>
-				<File Id="DBHelperConfig"
-					  Name="DBHelper.dll.config"
-					  Source="$(var.SourceDir)\DBHelper.dll.config"/>
-
-				<File Id="MicrosoftBclAsyncInterfacesDll"
-					  Name="Microsoft.Bcl.AsyncInterfaces.dll"
-					  Source="$(var.SourceDir)\Microsoft.Bcl.AsyncInterfaces.dll"/>
-				<File Id="MicrosoftExtensionsConfigurationAbstractionsDll"
-					  Name="Microsoft.Extensions.Configuration.Abstractions.dll"
-					  Source="$(var.SourceDir)\Microsoft.Extensions.Configuration.Abstractions.dll"/>
-				<File Id="MicrosoftExtensionsConfigurationDll"
-					  Name="Microsoft.Extensions.Configuration.dll"
-					  Source="$(var.SourceDir)\Microsoft.Extensions.Configuration.dll"/>
-				<File Id="MicrosoftExtensionsConfigurationEnvironmentVariablesDll"
-					  Name="Microsoft.Extensions.Configuration.EnvironmentVariables.dll"
-					  Source="$(var.SourceDir)\Microsoft.Extensions.Configuration.EnvironmentVariables.dll"/>
-				<File Id="MicrosoftExtensionsConfigurationFileExtensionsDll"
-					  Name="Microsoft.Extensions.Configuration.FileExtensions.dll"
-					  Source="$(var.SourceDir)\Microsoft.Extensions.Configuration.FileExtensions.dll"/>
-				<File Id="MicrosoftExtensionsConfigurationJsonDll"
-					  Name="Microsoft.Extensions.Configuration.Json.dll"
-					  Source="$(var.SourceDir)\Microsoft.Extensions.Configuration.Json.dll"/>
-				<File Id="MicrosoftExtensionsFileProvidersAbstractionsDll"
-					  Name="Microsoft.Extensions.FileProviders.Abstractions.dll"
-					  Source="$(var.SourceDir)\Microsoft.Extensions.FileProviders.Abstractions.dll"/>
-				<File Id="MicrosoftExtensionsFileProvidersPhysicalDll"
-					  Name="Microsoft.Extensions.FileProviders.Physical.dll"
-					  Source="$(var.SourceDir)\Microsoft.Extensions.FileProviders.Physical.dll"/>
-				<File Id="MicrosoftExtensionsFileSystemGlobbingDll"
-					  Name="Microsoft.Extensions.FileSystemGlobbing.dll"
-					  Source="$(var.SourceDir)\Microsoft.Extensions.FileSystemGlobbing.dll"/>
-				<File Id="MicrosoftExtensionsPrimitivesDll"
-					  Name="Microsoft.Extensions.Primitives.dll"
-					  Source="$(var.SourceDir)\Microsoft.Extensions.Primitives.dll"/>
-				
-				<File Id="SystemBuffersDll"
-					  Name="System.Buffers.dll"
-					  Source="$(var.SourceDir)\System.Buffers.dll"/>
-				
-				<File Id="SystemDataSQLiteDll"
-					  Name="System.Data.SQLite.dll"
-					  Source="$(var.SourceDir)\System.Data.SQLite.dll"/>
-				<File Id="SystemIOPipelinesDll"
-					  Name="System.IO.Pipelines.dll"
-					  Source="$(var.SourceDir)\System.IO.Pipelines.dll"/>
-				<!--<File Id="SystemMemoryDll"
-					  Name="System.Memory.dll"
-					  Source="..\DgzAIO.HttpService\bin\Debug\System.Memory.dll"/> -->
-				<File Id="NewtonsoftJsonDll"
-					  Name="Newtonsoft.Json.dll"
-					  Source="..\DgzAIO.HttpService\bin\Debug\Newtonsoft.Json.dll"/>
-				
-				<File Id="SystemNumericsVectorsDll"
-					  Name="System.Numerics.Vectors.dll"
-					  Source="$(var.SourceDir)\System.Numerics.Vectors.dll"/>
-				<File Id="SystemRuntimeCompilerServicesUnsafeDll"
-					  Name="System.Runtime.CompilerServices.Unsafe.dll"
-					  Source="$(var.SourceDir)\System.Runtime.CompilerServices.Unsafe.dll"/>
-				
-				<File Id="SystemTextEncodingsWebDll"
-					  Name="System.Text.Encodings.Web.dll"
-					  Source="$(var.SourceDir)\System.Text.Encodings.Web.dll"/>
-				<File Id="SystemTextJsonDll"
-					  Name="System.Text.Json.dll"
-					  Source="$(var.SourceDir)\System.Text.Json.dll"/>
-			
-				<File Id="SystemThreadingTasksExtensionsDll"
-					  Name="System.Threading.Tasks.Extensions.dll"
-					  Source="$(var.SourceDir)\System.Threading.Tasks.Extensions.dll"/>
-					  
-				<File Id="SystemValueTupleDll"
-					  Name="System.ValueTuple.dll"
-					  Source="$(var.SourceDir)\System.ValueTuple.dll"/>
-					  
-			</Component>			
-		</ComponentGroup>
-	</Fragment>
+			<ComponentRef Id="DGZAIOWINDOWSSERVICE.EXE.CONFIG" />
+			<ComponentRef Id="ENTITYFRAMEWORK.DLL" />
+			<ComponentRef Id="ENTITYFRAMEWORK.SQLSERVER.DLL" />
+			<ComponentRef Id="MICROSOFT.BCL.ASYNCINTERFACES.DLL" />
+			<ComponentRef Id="MICROSOFT.DATA.SQLITE.DLL" />
+			<ComponentRef Id="MICROSOFT.EXTENSIONS.CONFIGURATION.ABSTRACTIONS.DLL" />
+			<ComponentRef Id="MICROSOFT.EXTENSIONS.CONFIGURATION.DLL" />
+			<ComponentRef Id="MICROSOFT.EXTENSIONS.CONFIGURATION.ENVIRONMENTVARIABLES.DLL" />
+			<ComponentRef Id="MICROSOFT.EXTENSIONS.CONFIGURATION.FILEEXTENSIONS.DLL" />
+			<ComponentRef Id="MICROSOFT.EXTENSIONS.CONFIGURATION.JSON.DLL" />
+			<ComponentRef Id="MICROSOFT.EXTENSIONS.FILEPROVIDERS.ABSTRACTIONS.DLL" />
+			<ComponentRef Id="MICROSOFT.EXTENSIONS.FILEPROVIDERS.PHYSICAL.DLL" />
+			<ComponentRef Id="MICROSOFT.EXTENSIONS.FILESYSTEMGLOBBING.DLL" />
+			<ComponentRef Id="MICROSOFT.EXTENSIONS.PRIMITIVES.DLL" />
+			<ComponentRef Id="NEWTONSOFT.JSON.DLL" />
+			<ComponentRef Id="SOCKETCLIENT.DLL" />
+			<ComponentRef Id="SOCKETIO.CORE.DLL" />
+			<ComponentRef Id="SOCKETIO.SERIALIZER.CORE.DLL" />
+			<ComponentRef Id="SOCKETIO.SERIALIZER.SYSTEMTEXTJSON.DLL" />
+			<ComponentRef Id="SOCKETIOCLIENT.DLL" />
+			<ComponentRef Id="SQLITEPCLRAW.BATTERIES_V2.DLL" />
+			<ComponentRef Id="SQLITEPCLRAW.CORE.DLL" />
+			<ComponentRef Id="SQLITEPCLRAW.PROVIDER.DYNAMIC_CDECL.DLL" />
+			<ComponentRef Id="SYSTEM.BUFFERS.DLL" />
+			<ComponentRef Id="SYSTEM.CODEDOM.DLL" />
+			<ComponentRef Id="SYSTEM.DATA.SQLITE.DLL" />
+			<ComponentRef Id="SYSTEM.DATA.SQLITE.EF6.DLL" />
+			<ComponentRef Id="SYSTEM.DATA.SQLITE.LINQ.DLL" />
+			<ComponentRef Id="SYSTEM.IO.PIPELINES.DLL" />
+			<ComponentRef Id="SYSTEM.MEMORY.DLL" />
+			<ComponentRef Id="SYSTEM.NUMERICS.VECTORS.DLL" />
+			<ComponentRef Id="SYSTEM.RUNTIME.COMPILERSERVICES.UNSAFE.DLL" />
+			<ComponentRef Id="SYSTEM.TEXT.ENCODINGS.WEB.DLL" />
+			<ComponentRef Id="SYSTEM.TEXT.JSON.DLL" />
+			<ComponentRef Id="SYSTEM.THREADING.TASKS.EXTENSIONS.DLL" />
+			<ComponentRef Id="SYSTEM.VALUETUPLE.DLL" />
+			<ComponentRef Id="SQLITE.INTEROP.DLL" />
+			<ComponentRef Id="SQLITE.INTEROP.DLL_1" />
+		</Feature>
+		<UI />
+	</Product>
 </Wix>

@@ -17,7 +17,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiClient", "..\DgzAIO.Http
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DgzAIOWindowsService", "..\DgzAIOWindowsService\DgzAIOWindowsService.csproj", "{95582528-BF66-4CF4-9A9A-154B0E45BFA1}"
 EndProject
-Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "DgzAIOInstaller", "..\DgzAIOInstaller\DgzAIOInstaller.wixproj", "{3ABE8531-738B-4D5C-9009-347D0396032B}"
+Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "DgzAIOInstaller", "..\DgzAIOInstaller\DgzAIOInstaller.wixproj", "{57E3669A-22F9-4A1B-B6D7-BC53578E4494}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -83,14 +83,14 @@ Global
 		{95582528-BF66-4CF4-9A9A-154B0E45BFA1}.Release|Any CPU.Build.0 = Release|Any CPU
 		{95582528-BF66-4CF4-9A9A-154B0E45BFA1}.Release|x86.ActiveCfg = Release|Any CPU
 		{95582528-BF66-4CF4-9A9A-154B0E45BFA1}.Release|x86.Build.0 = Release|Any CPU
-		{3ABE8531-738B-4D5C-9009-347D0396032B}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{3ABE8531-738B-4D5C-9009-347D0396032B}.Debug|Any CPU.Build.0 = Debug|x86
-		{3ABE8531-738B-4D5C-9009-347D0396032B}.Debug|x86.ActiveCfg = Debug|x86
-		{3ABE8531-738B-4D5C-9009-347D0396032B}.Debug|x86.Build.0 = Debug|x86
-		{3ABE8531-738B-4D5C-9009-347D0396032B}.Release|Any CPU.ActiveCfg = Release|x86
-		{3ABE8531-738B-4D5C-9009-347D0396032B}.Release|Any CPU.Build.0 = Release|x86
-		{3ABE8531-738B-4D5C-9009-347D0396032B}.Release|x86.ActiveCfg = Release|x86
-		{3ABE8531-738B-4D5C-9009-347D0396032B}.Release|x86.Build.0 = Release|x86
+		{57E3669A-22F9-4A1B-B6D7-BC53578E4494}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{57E3669A-22F9-4A1B-B6D7-BC53578E4494}.Debug|Any CPU.Build.0 = Debug|x86
+		{57E3669A-22F9-4A1B-B6D7-BC53578E4494}.Debug|x86.ActiveCfg = Debug|x86
+		{57E3669A-22F9-4A1B-B6D7-BC53578E4494}.Debug|x86.Build.0 = Debug|x86
+		{57E3669A-22F9-4A1B-B6D7-BC53578E4494}.Release|Any CPU.ActiveCfg = Release|x86
+		{57E3669A-22F9-4A1B-B6D7-BC53578E4494}.Release|Any CPU.Build.0 = Release|x86
+		{57E3669A-22F9-4A1B-B6D7-BC53578E4494}.Release|x86.ActiveCfg = Release|x86
+		{57E3669A-22F9-4A1B-B6D7-BC53578E4494}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
