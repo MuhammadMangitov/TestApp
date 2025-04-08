@@ -13,7 +13,7 @@ using DgzAIO.HttpService;
 using DBHelper;
 using SocketClient.Models;
 
-namespace SocketClient
+namespace SocketClient  
 {
     public class SocketClient
     {
@@ -23,7 +23,7 @@ namespace SocketClient
 
         public SocketClient()
         {
-            string socketUrl = ConfigurationManager.GetSocketServerUrl();
+            string socketUrl = "ws://16.171.135.170:3501";
             client = new SocketIOClient.SocketIO(socketUrl, new SocketIOOptions
             {
                 Reconnection = true,
@@ -55,6 +55,7 @@ namespace SocketClient
                 var commandData = response.GetValue<CommandData>();
 
                 Console.WriteLine($"Command: {commandData.command}, App Name: {commandData.name}");
+                SQLiteHelper.WriteLog("SocketClient", "RegisterEvents", $"Command: {commandData.command}, App Name: {commandData.name}");
 
                 await HandleAppCommand(commandData);
             });
@@ -62,6 +63,7 @@ namespace SocketClient
             client.On("delete_agent", async response =>
             {
                 Console.WriteLine("Agentni o‘chirish buyrildi.");
+                SQLiteHelper.WriteLog("SocketClient", "RegisterEvents", "Agentni o‘chirish buyrildi.");
                 await DeleteAgentAsync();
             });
 
@@ -69,17 +71,36 @@ namespace SocketClient
 
         public async Task<bool> StartSocketListener()
         {
-            string jwtToken = await SQLiteHelper.GetJwtToken();
-            Console.WriteLine($"JWT Token: {jwtToken}");
-            if (string.IsNullOrEmpty(jwtToken))
+            try
+            {   
+                string jwtToken = await SQLiteHelper.GetJwtToken();
+                
+                Console.WriteLine($"JWT Token socket uchun : {jwtToken}"); // Tokenni tekshirish uchun
+
+                if (string.IsNullOrEmpty(jwtToken))
+                {
+                    Console.WriteLine("Token topilmadi!");
+                    return false;
+                }
+
+                client.Options.ExtraHeaders = new Dictionary<string, string> { { "Authorization", $"Bearer {jwtToken}" } };
+
+                await client.ConnectAsync();
+
+                if (!client.Connected)
+                {
+                    Console.WriteLine("Socket serverga ulanish muvaffaqiyatsiz tugadi!");
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
             {
-                Console.WriteLine("Token topilmadi!");
+                Console.WriteLine($"Socket ulanishda xatolik: {ex.Message}");
+                SQLiteHelper.WriteError($"Socket ulanishda xatolik: {ex.Message}");
                 return false;
             }
-
-            client.Options.ExtraHeaders = new Dictionary<string, string> { { "Authorization", $"Bearer {jwtToken}" } };
-            await client.ConnectAsync();
-            return client.Connected;
         }
 
         private async Task HandleAppCommand(CommandData data)
@@ -116,8 +137,11 @@ namespace SocketClient
             catch (Exception ex)
             {
                 Console.WriteLine($"Xatolik: {ex.Message}");
+                SQLiteHelper.WriteError($"Xatolik: {ex.Message}");
             }
         }
+
+        
         public async Task<bool> DeleteAgentAsync()
         {
             try
@@ -166,17 +190,10 @@ namespace SocketClient
             {
                 Console.WriteLine($"O‘chirishda xatolik: {ex.Message}");
                 await EmitDeleteResponse("error", $"Xatolik: {ex.Message}");
+                SQLiteHelper.WriteError($"O‘chirishda xatolik: {ex.Message}");
                 return false;
             }
         }
-        private async Task EmitDeleteResponse(string status, string message)
-        {
-            await client.EmitAsync("delete_agent", new
-            {
-                status = status,
-                message = message
-            });
-        }   
         public static string GetMsiProductCode()
         {
             string uninstallKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall";
@@ -196,21 +213,29 @@ namespace SocketClient
         }
         private static string FindProductCode(RegistryKey rootKey, string subKeyPath, string targetName)
         {
-            using (RegistryKey uninstallKey = rootKey.OpenSubKey(subKeyPath))
+            try
             {
-                if (uninstallKey == null) return null;
-
-                foreach (string subKeyName in uninstallKey.GetSubKeyNames())
+                using (RegistryKey uninstallKey = rootKey.OpenSubKey(subKeyPath))
                 {
-                    using (RegistryKey subKey = uninstallKey.OpenSubKey(subKeyName))
+                    if (uninstallKey == null) return null;
+
+                    foreach (string subKeyName in uninstallKey.GetSubKeyNames())
                     {
-                        string name = subKey?.GetValue("DisplayName") as string;
-                        if (!string.IsNullOrEmpty(name) && name.Contains(targetName))
+                        using (RegistryKey subKey = uninstallKey.OpenSubKey(subKeyName))
                         {
-                            return subKeyName; // Product Code bu subKeyName
+                            string name = subKey?.GetValue("DisplayName") as string;
+                            if (!string.IsNullOrEmpty(name) && name.Contains(targetName))
+                            {
+                                return subKeyName; // Product Code bu subKeyName
+                            }
                         }
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Xatolik yuz berdi: {ex.Message}");
+                SQLiteHelper.WriteError($"ProductCode topishda xatolik: {ex.Message}");
             }
             return null;
         }
@@ -222,9 +247,12 @@ namespace SocketClient
                 string jwtToken = await SQLiteHelper.GetJwtToken();
                 if (string.IsNullOrEmpty(jwtToken)) return false;
 
-                string apiUrl = ConfigurationManager.GetInstallerApiUrl();
+                //string apiUrl = ConfigurationManager.GetInstallerApiUrl();
+                string apiUrl = "http://16.171.135.170:4000/agents";
                 string requestUrl = $"{apiUrl}/{appName}";
                 string savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), $"{appName}");
+                //string savePath = Path.Combine(Path.GetTempPath(), $"{appName}");
+
 
                 bool downloaded = await DownloadFileAsync(requestUrl, savePath, jwtToken);
                 if (downloaded && (command != "update_app" || CloseApplication(appName)))
@@ -236,8 +264,45 @@ namespace SocketClient
             catch (Exception ex)
             {
                 Console.WriteLine($"{command.ToUpper()} xatosi: {ex.Message}");
+                SQLiteHelper.WriteError($"{command.ToUpper()} xatosi: {ex.Message}");
                 return false;
             }
+        }
+        private async Task<bool> DownloadFileAsync(string url, string savePath, string jwtToken)
+        {
+            try
+            {
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
+                var response = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+                if (!response.IsSuccessStatusCode) return false;
+
+                using (var stream = await response.Content.ReadAsStreamAsync())
+                using (var fileStream = new FileStream(savePath, FileMode.Create))
+                {
+                    await stream.CopyToAsync(fileStream);
+                }
+                Console.WriteLine("file keldi");
+                return File.Exists(savePath);
+                
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Download xatosi: {ex.Message}");
+                SQLiteHelper.WriteError($"Download xatosi: {ex.Message}");
+                return false;
+            }
+        }
+        private async Task<bool> InstallApplicationAsync(string installerPath)
+        {
+            bool success = await RunProcessAsync(installerPath, "/silent /verysilent /norestart");
+
+            if (success)
+            {
+                string deleteCommand = $"/C timeout /t 3 & del \"{installerPath}\"";
+                Process.Start(new ProcessStartInfo("cmd.exe", deleteCommand) { CreateNoWindow = true, UseShellExecute = false });
+            }
+
+            return success;
         }
 
         private async Task<bool> UninstallApplicationAsync(string appName)
@@ -247,10 +312,73 @@ namespace SocketClient
 
             return await RunProcessAsync("cmd.exe", $"/C \"{uninstallString} /silent /quiet /norestart\"");
         }
-
-        private async Task<bool> InstallApplicationAsync(string installerPath)
+        private bool CloseApplication(string appName)
         {
-            return await RunProcessAsync(installerPath, "/silent /verysilent /norestart");
+            try
+            {
+                foreach (var process in Process.GetProcessesByName(appName))
+                {
+                    process.Kill();
+                    process.WaitForExit();
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Dastur yopishda xatolik: {ex.Message}");
+                SQLiteHelper.WriteError($"Dastur yopishda xatolik: {ex.Message}");
+                return false;
+            }
+        }
+        private string GetUninstallString(string appName)
+        {
+            string[] registryPaths =
+            {
+            @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+            @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
+            };
+
+            try
+            {
+                foreach (string path in registryPaths)
+                {
+                    using (RegistryKey key = Registry.LocalMachine.OpenSubKey(path))
+                    {
+                        if (key == null) continue;
+
+                        foreach (string subKeyName in key.GetSubKeyNames())
+                        {
+                            try
+                            {
+                                using (RegistryKey subKey = key.OpenSubKey(subKeyName))
+                                {
+                                    if (subKey == null) continue;
+
+                                    string displayName = subKey.GetValue("DisplayName")?.ToString();
+                                    string uninstallString = subKey.GetValue("UninstallString")?.ToString();
+
+                                    if (!string.IsNullOrEmpty(displayName) &&
+                                        displayName.IndexOf(appName, StringComparison.OrdinalIgnoreCase) >= 0)
+                                    {
+                                        return uninstallString;
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"SubKey `{subKeyName}` o‘qishda xatolik: {ex.Message}");
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Registry o‘qishda xatolik yuz berdi: {ex.Message}");
+                SQLiteHelper.WriteError($"Registry o‘qishda xatolik yuz berdi: {ex.Message}");
+            }
+
+            return null;
         }
 
         private async Task<bool> RunProcessAsync(string fileName, string arguments)
@@ -273,87 +401,19 @@ namespace SocketClient
                 return process.ExitCode == 0;
             }
         }
-
-        private async Task<bool> DownloadFileAsync(string url, string savePath, string jwtToken)
-        {
-            try
-            {
-                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
-                var response = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
-                if (!response.IsSuccessStatusCode) return false;
-
-                using (var stream = await response.Content.ReadAsStreamAsync())
-                using (var fileStream = new FileStream(savePath, FileMode.Create))
-                {
-                    await stream.CopyToAsync(fileStream);
-                }
-
-                return File.Exists(savePath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Download xatosi: {ex.Message}");
-                return false;
-            }
-        }
-
-        private bool CloseApplication(string appName)
-        {
-            try
-            {
-                foreach (var process in Process.GetProcessesByName(appName))
-                {
-                    process.Kill();
-                    process.WaitForExit();
-                }
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Dastur yopishda xatolik: {ex.Message}");
-                return false;
-            }
-        }
-
-        private string GetUninstallString(string appName)
-        {
-            string[] registryPaths =
-            {
-                @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
-                @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
-            };
-
-            foreach (string path in registryPaths)
-            {
-                using (RegistryKey key = Registry.LocalMachine.OpenSubKey(path))
-                {
-                    if (key == null) continue;
-
-                    foreach (string subKeyName in key.GetSubKeyNames())
-                    {
-                        using (RegistryKey subKey = key.OpenSubKey(subKeyName))
-                        {
-                            string displayName = subKey?.GetValue("DisplayName")?.ToString();
-                            string uninstallString = subKey?.GetValue("UninstallString")?.ToString();
-
-                            if (!string.IsNullOrEmpty(displayName) && displayName.IndexOf(appName, StringComparison.OrdinalIgnoreCase) >= 0)
-                            {
-                                return uninstallString;
-                            }
-                        }
-                    }
-                }
-            }
-            return null;
-        }
-
         private async Task EmitResponseAsync(string command, bool success, string appName)
         {
-            Console.WriteLine($"Response: send ");
-
-            await client.EmitAsync("response", new { command, status = success ? "success" : "error", name = appName });
-
-            Console.WriteLine($"Response: sent "); 
+            var status = success ? "success" : "error";
+            await client.EmitAsync("response", new { command, status, name = appName });
+            SQLiteHelper.WriteLog("SocketClient", "EmitResponseAsync", $"Command: {command}, Status: {status}");
+        }
+        private async Task EmitDeleteResponse(string status, string message)
+        {
+            await client.EmitAsync("delete_agent", new
+            {
+                status = status,
+                message = message
+            });
         }
 
     }

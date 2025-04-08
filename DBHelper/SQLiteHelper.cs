@@ -2,32 +2,102 @@
 using SQLitePCL;
 using System;
 using System.IO;
+using DgzAIO.HttpService;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace DBHelper
 {
     public class SQLiteHelper
     {
-        private static readonly string dbPath = "C:\\Users\\Muhammad\\Desktop\\c#_modul\\github\\SystemMonitorInstaller\\DBHelper\\SystemMonitor.db";
+        public static string ApplicationDirectory => 
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), 
+                AppDomain.CurrentDomain.FriendlyName);
 
+       /* public static string ApplicationDirectory => 
+            Path.Combine("C:\\", 
+                AppDomain.CurrentDomain.FriendlyName);*/
         public static SQLiteConnection CreateConnection()
-        { 
-            if (!File.Exists(dbPath))
+        {
+            string appDirectory = ApplicationDirectory.Split('.').FirstOrDefault(); ;
+
+            try
             {
-                Console.WriteLine("Baza mavjud emas!");
+                if (!Directory.Exists(appDirectory))
+                {
+                    Directory.CreateDirectory(appDirectory);
+                    Console.WriteLine($"Katalog yaratildi: {appDirectory}");
+                }
 
+                string dbPath = Path.Combine(appDirectory, "DgzAIO.db");
 
-                
-                Console.WriteLine($"Fayl mavjudmi? {File.Exists(dbPath)}");
+                if (!File.Exists(dbPath))
+                {
+                    Console.WriteLine("Baza mavjud emas! Fayl yaratilmoqda...");
+                    SQLiteConnection.CreateFile(dbPath);  
+                }
 
-                Console.WriteLine($"Fayl yo'li: {dbPath}");
-
-                return null;
+                SQLiteConnection connection = new SQLiteConnection($"Data Source={dbPath};Version=3;");
+                connection.Open();
+                return connection;
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Xatolik: {ex.Message}");
+                throw;
+            }
+        }
 
-            var connection = new SQLiteConnection($"Data Source={dbPath};Version=3;");
-            connection.Open();
-            return connection;
+        public static void CreateTablesIfNotExists()
+        {
+            using (var connection = CreateConnection())
+            {
+                try
+                {
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText = @"
+                        CREATE TABLE IF NOT EXISTS LogEntry (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            module TEXT NOT NULL,
+                            function TEXT NOT NULL,
+                            created_date TEXT NOT NULL,
+                            message TEXT NOT NULL
+                        )";
+                        command.ExecuteNonQuery();
+
+                        command.CommandText = @"
+                        CREATE TABLE IF NOT EXISTS Error (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            message TEXT NOT NULL,
+                            created_date TEXT NOT NULL
+                        )";
+                        command.ExecuteNonQuery();
+
+                        command.CommandText = @"
+                        CREATE TABLE IF NOT EXISTS Configurations (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            server_ip TEXT NOT NULL,
+                            Jwt_token TEXT NOT NULL,
+                            report_time INTEGER,
+                            modules TEXT NOT NULL,
+                            last_sent_time TEXT
+                        )";
+                        command.ExecuteNonQuery();
+
+                        command.CommandText = @"
+                        INSERT OR IGNORE INTO Configurations (id, server_ip, Jwt_token, report_time, modules, last_sent_time) 
+                        VALUES (1, 'default_ip', 'default_token', 0, 'default_modules', NULL)";
+                        command.ExecuteNonQuery();
+                    }
+
+                    Console.WriteLine("Jadvallar muvaffaqiyatli yaratildi yoki allaqachon mavjud.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Jadvallarni yaratishda xatolik: {ex.Message}");
+                }
+            }
         }
 
         public static void InsertJwtToken(string token)
@@ -169,6 +239,37 @@ namespace DBHelper
             }
         }
 
+        public static void WriteError(string message)
+        {
+            if (string.IsNullOrEmpty(message))
+            {
+                Console.WriteLine("Xato xabari bo‘sh bo‘lishi mumkin emas.");
+                return;
+            }
+
+            var createdDate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+            using (var connection = CreateConnection())
+            {
+                if (connection == null) return;
+
+                try
+                {
+                    using (var command = new SQLiteCommand(@"INSERT INTO ""Error"" (""message"", ""created_date"") 
+                                                     VALUES (@message, @created_date)", connection))
+                    {
+                        command.Parameters.AddWithValue("@message", message);
+                        command.Parameters.AddWithValue("@created_date", createdDate);
+                        command.ExecuteNonQuery();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Xatoni yozishda xatolik yuz berdi: {ex.Message}");
+                }
+            }
+        }
+
         public static DateTime? GetLastSentTime()
         {
             using (var connection = CreateConnection())
@@ -217,7 +318,6 @@ namespace DBHelper
                 }
             }
         }
-
         public static bool ShouldSendProgramInfo()
         {
             DateTime? lastSentTime = GetLastSentTime();
@@ -225,6 +325,5 @@ namespace DBHelper
 
             return (DateTime.UtcNow - lastSentTime.Value).TotalHours >= 24;
         }
-
     }
 }

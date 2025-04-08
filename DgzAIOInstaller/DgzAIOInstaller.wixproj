@@ -4,7 +4,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
     <ProductVersion>3.10</ProductVersion>
-    <ProjectGuid>3abe8531-738b-4d5c-9009-347d0396032b</ProjectGuid>
+    <ProjectGuid>57e3669a-22f9-4a1b-b6d7-bc53578e4494</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
     <OutputName>DgzAIOInstaller</OutputName>
     <OutputType>Package</OutputType>
@@ -22,28 +22,14 @@
     <Compile Include="Product.wxs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DgzAIO.HttpService\ApiClient.csproj">
-      <Name>ApiClient</Name>
-      <Project>{0e4ec176-5aa5-46b9-8e69-957a650ea606}</Project>
+    <ProjectReference Include="..\TestApp\DgzAIO.csproj">
+      <Name>DgzAIO</Name>
+      <Project>{bcd59c80-9b80-44ab-8fc5-41e3788df6b7}</Project>
       <Private>True</Private>
       <DoNotHarvest>True</DoNotHarvest>
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLFOLDER</RefTargetDir>
     </ProjectReference>
-    <ProjectReference Include="..\DgzAIOWindowsService\DgzAIOWindowsService.csproj">
-      <Name>DgzAIOWindowsService</Name>
-      <Project>{95582528-bf66-4cf4-9a9a-154b0e45bfa1}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>True</DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <WixExtension Include="WixUIExtension">
-      <HintPath>$(WixExtDir)\WixUIExtension.dll</HintPath>
-      <Name>WixUIExtension</Name>
-    </WixExtension>
   </ItemGroup>
   <Import Project="$(WixTargetsPath)" Condition=" '$(WixTargetsPath)' != '' " />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets" Condition=" '$(WixTargetsPath)' == '' AND Exists('$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets') " />

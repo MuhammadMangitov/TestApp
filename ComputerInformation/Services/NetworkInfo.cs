@@ -36,6 +36,7 @@ namespace DgzAIO.Services
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Tarmoq adapterlari haqida ma'lumot olishda xatolik: {ex.Message}");
+                    DBHelper.SQLiteHelper.WriteError($"Tarmoq adapterlari haqida ma'lumot olishda xatolik: {ex.Message}");
                 }
                 return adapters;
             });
