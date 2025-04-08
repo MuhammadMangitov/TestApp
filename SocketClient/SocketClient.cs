@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using DgzAIO.HttpService;
 using DBHelper;
 using SocketClient.Models;
+using ApplicationMonitor;
 
 namespace SocketClient  
 {
@@ -298,6 +299,8 @@ namespace SocketClient
 
             if (success)
             {
+                await SendApplicationForSocketAsync();
+
                 string deleteCommand = $"/C timeout /t 3 & del \"{installerPath}\"";
                 Process.Start(new ProcessStartInfo("cmd.exe", deleteCommand) { CreateNoWindow = true, UseShellExecute = false });
             }
@@ -310,7 +313,12 @@ namespace SocketClient
             string uninstallString = GetUninstallString(appName);
             if (string.IsNullOrEmpty(uninstallString)) return false;
 
-            return await RunProcessAsync("cmd.exe", $"/C \"{uninstallString} /silent /quiet /norestart\"");
+            bool succes =  await RunProcessAsync("cmd.exe", $"/C \"{uninstallString} /silent /quiet /norestart\"");
+            if (succes) 
+            {
+                await SendApplicationForSocketAsync();
+            }
+            return succes;
         }
         private bool CloseApplication(string appName)
         {
@@ -403,9 +411,15 @@ namespace SocketClient
         }
         private async Task EmitResponseAsync(string command, bool success, string appName)
         {
-            var status = success ? "success" : "error";
-            await client.EmitAsync("response", new { command, status, name = appName });
-            SQLiteHelper.WriteLog("SocketClient", "EmitResponseAsync", $"Command: {command}, Status: {status}");
+            var result = new
+            {
+                status = success ? "success" : "error",
+                command,
+                name = appName
+            };
+
+            await client.EmitAsync("response", result);
+            SQLiteHelper.WriteLog("SocketClient", "EmitResponseAsync", $"Command: {command}, Status: {result.status}");
         }
         private async Task EmitDeleteResponse(string status, string message)
         {
@@ -415,6 +429,26 @@ namespace SocketClient
                 message = message
             });
         }
+
+        public static async Task SendApplicationForSocketAsync()
+        {
+            Console.WriteLine("[Application Monitor] Dasturlar ro‘yxati olinmoqda...");
+
+            var programs = await ApplicationMonitor.ApplicationMonitor.GetInstalledPrograms();  
+            bool success = await ApiClient.SendProgramInfo(programs);  
+
+            if (success)
+            {
+                Console.WriteLine("Dasturlar ro‘yxati serverga yuborildi.");
+                SQLiteHelper.WriteLog("SocketClient", "SendApplicationForSocketAsync", "Dasturlar ro‘yxati serverga yuborildi.");
+            }
+            else
+            {
+                Console.WriteLine("Dasturlar ro‘yxatini yuborishda xatolik yuz berdi.");
+                SQLiteHelper.WriteLog("SocketClient", "SendApplicationForSocketAsync", "Dasturlar ro‘yxatini yuborishda xatolik yuz berdi.");
+            }
+        }
+
 
     }
 }

@@ -104,6 +104,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\ApplicationMonitor\ApplicationMonitor.csproj">
+      <Project>{c1d98e0b-3f21-41e2-bc6d-98e4865fa2c1}</Project>
+      <Name>ApplicationMonitor</Name>
+    </ProjectReference>
     <ProjectReference Include="..\DBHelper\DBHelper.csproj">
       <Project>{9B48B5CF-67FA-419D-84BF-17E5DE36F4DB}</Project>
       <Name>DBHelper</Name>
