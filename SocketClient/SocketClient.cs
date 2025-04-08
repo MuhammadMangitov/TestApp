@@ -23,7 +23,6 @@ namespace SocketClient
 
         public SocketClient()
         {
-            //string socketUrl = ConfigurationManager.GetSocketServerUrl();
             string socketUrl = "ws://16.171.135.170:3501";
             client = new SocketIOClient.SocketIO(socketUrl, new SocketIOOptions
             {

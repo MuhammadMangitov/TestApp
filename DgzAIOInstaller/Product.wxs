@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-	<Product Id="27888F5C-09FF-45ED-922F-A2D7EA5D4DA7" Name="TestProduct" Language="1033" Version="0.0.0.1" Manufacturer="WixEdit" UpgradeCode="94DAABE4-B490-40B7-A902-96BB56631CC4">
+	<Product Id="27888F5C-09FF-45ED-922F-A2D7EA5D4DA7" Name="DgzAgent" Language="1033" Version="0.0.0.1" Manufacturer="Datagaze LLC" UpgradeCode="94DAABE4-B490-40B7-A902-96BB56631CC4">
 		<Package Description="Test file in a Product" Comments="Simple test" InstallerVersion="200" Compressed="yes" />
 		<Media Id="1" Cabinet="simple.cab" EmbedCab="yes" />
 		<Feature Id="ProductFeature" Title="My App" Level="1">
 			<ComponentRef Id="DgzAIOServiceComponent" />
 		</Feature>
 		<Directory Id="TARGETDIR" Name="SourceDir">
-			<Directory Id="ProgramFilesFolder" Name="PFiles" />
-			<Directory Id="DGZ" Name="dgz">
+			<Directory Id="ProgramFilesFolder">
+			<Directory Id="DGZ" Name="DgzAIO">
 				<Component Id="DgzAIOServiceComponent" Guid="A3BB6943-C53E-4CC7-BB5C-EF98F915AE50">
 					<File Id="DgzAIOServiceExe"
 					  Name="DgzAIOWindowsService.exe"
@@ -169,6 +169,7 @@
 					</Component>
 				</Directory>
 			</Directory>
+		</Directory>
 		</Directory>
 		<Feature Id="DefaultFeature" Title="Main Feature" Level="1">
 			<ComponentRef Id="APPLICATIONMONITOR.DLL" />

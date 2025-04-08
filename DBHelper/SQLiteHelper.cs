@@ -10,12 +10,13 @@ namespace DBHelper
 {
     public class SQLiteHelper
     {
-        /*public static string ApplicationDirectory => 
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), 
-                AppDomain.CurrentDomain.FriendlyName);*/
         public static string ApplicationDirectory => 
-            Path.Combine("C:\\", 
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), 
                 AppDomain.CurrentDomain.FriendlyName);
+
+       /* public static string ApplicationDirectory => 
+            Path.Combine("C:\\", 
+                AppDomain.CurrentDomain.FriendlyName);*/
         public static SQLiteConnection CreateConnection()
         {
             string appDirectory = ApplicationDirectory.Split('.').FirstOrDefault(); ;
