@@ -68,11 +68,12 @@ namespace SocketClient
             {
                 Console.WriteLine("Agentni o‘chirish buyrildi.");
                 SQLiteHelper.WriteLog("SocketClient", "RegisterEvents", "Agentni o‘chirish buyrildi.");
-                var productCode = GetMsiProductCode();
-                SQLiteHelper.WriteLog("SocketClient", "RegisterEvents", $"{productCode}");
+                //var productCode = GetMsiProductCode();
+                //SQLiteHelper.WriteLog("SocketClient", "RegisterEvents", $"{productCode}");
 
                 SendUninstallToService();
                 SQLiteHelper.WriteLog("SocketClient", "RegisterEvents", "Agentni o‘chirish so‘rovi xizmatga yuborildi.");
+                client.EmitAsync("delete_agent", new { status = "success", message = "Agent o‘chirilmoqda..." });
 
             });
         }
@@ -234,7 +235,6 @@ namespace SocketClient
             string wow64Key = @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall";
             return FindProductCode(Registry.LocalMachine, wow64Key, displayName);
         }
-
         private static string GetInstalledAgentName()
         {
             string processName = Process.GetCurrentProcess().ProcessName;
@@ -244,7 +244,6 @@ namespace SocketClient
 
             return agentName;
         }
-
         private static string FindProductCode(RegistryKey rootKey, string subKeyPath, string targetName)
         {
             try

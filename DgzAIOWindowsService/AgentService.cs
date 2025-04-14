@@ -15,172 +15,197 @@ namespace DgzAIOWindowsService
 {
     public class AgentService : IAgentService
     {
-        private static readonly string LogFilePath = @"C:\Logs\AgentService.log"; // Log fayli joylashuvi
-
+        private static readonly string LogFilePath = @"C:\Logs\AgentService.log";
         public bool UninstallAgent()
         {
             try
             {
-                Log("Agentni o‘chirish jarayoni boshlandi.");
-
-                // 1. Xizmatni to‘xtatish
-                /*string serviceName = "DgzAIO Windows Service"; // Xizmat nomini o‘zgartiring
-                StopService(serviceName);*/
-                Log("..........");  
-
-                bool isUninstalled = UninstallMsiFromRegistry();
-                if (!isUninstalled)
+                // 1. DgzAIO.exe jarayonini yopish
+                try
                 {
-                    Log("MSI dasturini o‘chirishda muammo yuz berdi.");
-                    return false;
+                    ProcessStartInfo taskKill = new ProcessStartInfo
+                    {
+                        FileName = "taskkill",
+                        Arguments = "/IM DgzAIO.exe /F",
+                        CreateNoWindow = true,
+                        UseShellExecute = false
+                    };
+                    Process killProcess = Process.Start(taskKill);
+                    killProcess.WaitForExit();
+                    Log(killProcess.ExitCode == 0 ? "DgzAIO.exe jarayoni yopildi." : "DgzAIO.exe jarayoni topilmadi yoki yopilmadi.");
+                }
+                catch (Exception ex)
+                {
+                    Log($"Jarayon yopishda xato: {ex.Message}");
                 }
 
-                CleanupFiles();
+                // 2. Registrdan GUID olish
+                RegistryKey key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\WOW6432Node\Datagaze\DLP", true)
+                                  ?? Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Datagaze\DLP", true);
 
-                Log("Agent muvaffaqiyatli o‘chirildi.");
+                string guid = null;
+                if (key != null)
+                {
+                    guid = key.GetValue("guid")?.ToString();
+                    Log($"Guid: {guid}");
+                    key.Close();
+                }
+
+                // 3. MSI o‘chirishga urinish
+                if (!string.IsNullOrEmpty(guid))
+                {
+                    guid = guid.Trim('{', '}');
+                    string commandArgs = $"/x {{{guid}}} /qn";
+                    Log($"commands = msiexec.exe {commandArgs}");
+
+                    ProcessStartInfo psi = new ProcessStartInfo
+                    {
+                        FileName = "msiexec.exe",
+                        Arguments = commandArgs,
+                        CreateNoWindow = true,
+                        UseShellExecute = true,
+                        Verb = "runas",
+                        WindowStyle = ProcessWindowStyle.Hidden
+                    };
+
+                    Process process = new Process();
+                    process.StartInfo = psi;
+
+                    Log("Uninstall jarayoni boshlanyapti...");
+                    process.Start();
+                    process.WaitForExit();
+
+                    int exitCode = process.ExitCode;
+                    Log($"MsiExec chiqqan kod: {exitCode}");
+
+                    switch (exitCode)
+                    {
+                        case 0:
+                            Log("O'chirish muvaffaqiyatli amalga oshirildi.");
+                            break;
+                        case 1605:
+                            Log($"Ko‘rsatilgan GUID {{{guid}}} ga mos dastur tizimda topilmadi. Qoldiq resurslar tozalanmoqda...");
+                            break;
+                        default:
+                            Log($"O'chirishda xato: Exit code {exitCode}");
+                            break;
+                    }
+                }
+                else
+                {
+                    Log("GUID topilmadi, qoldiq resurslar tozalanmoqda...");
+                }
+
+                // 4. Registrni tozalash
+                try
+                {
+                    Registry.LocalMachine.DeleteSubKeyTree(@"SOFTWARE\WOW6432Node\Datagaze\DLP", false);
+                    Log("Registr kaliti o‘chirildi: SOFTWARE\\WOW6432Node\\Datagaze\\DLP");
+                }
+                catch (Exception ex)
+                {
+                    Log($"Registr kalitini o‘chirishda xato (WOW6432Node): {ex.Message}");
+                }
+
+                try
+                {
+                    Registry.LocalMachine.DeleteSubKeyTree(@"SOFTWARE\Datagaze\DLP", false);
+                    Log("Registr kaliti o‘chirildi: SOFTWARE\\Datagaze\\DLP");
+                }
+                catch (Exception ex)
+                {
+                    Log($"Registr kalitini o‘chirishda xato: {ex.Message}");
+                }
+
+                // 5. Fayl va papkalarni tozalash
+                try
+                {
+                    string installPath = @"C:\Program Files (x86)\DgzAIO";
+                    if (Directory.Exists(installPath))
+                    {
+                        foreach (var file in Directory.GetFiles(installPath, "*", SearchOption.AllDirectories))
+                        {
+                            File.SetAttributes(file, FileAttributes.Normal);
+                        }
+                        Directory.Delete(installPath, true);
+                        Log($"O‘rnatish papkasi o‘chirildi: {installPath}");
+                    }
+                    else
+                    {
+                        Log($"O‘rnatish papkasi topilmadi: {installPath}");
+                    }
+
+                    string dbPath = @"C:\ProgramData\DgzAIO";
+                    if (Directory.Exists(dbPath))
+                    {
+                        foreach (var file in Directory.GetFiles(dbPath, "*", SearchOption.AllDirectories))
+                        {
+                            File.SetAttributes(file, FileAttributes.Normal);
+                        }
+                        Directory.Delete(dbPath, true);
+                        Log($"Ma’lumotlar bazasi papkasi o‘chirildi: {dbPath}");
+                    }
+                    else
+                    {
+                        Log($"Ma’lumotlar bazasi papkasi topilmadi: {dbPath}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log($"Fayl/papka o‘chirishda xato: {ex.Message}");
+                }
+
+                // 6. MSI keshini tozalash
+                if (!string.IsNullOrEmpty(guid))
+                {
+                    try
+                    {
+                        string installerPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Installer");
+                        string sourceHashFile = Path.Combine(installerPath, $"SourceHash{{{guid}}}");
+                        if (File.Exists(sourceHashFile))
+                        {
+                            File.SetAttributes(sourceHashFile, FileAttributes.Normal);
+                            File.Delete(sourceHashFile);
+                            Log($"MSI kesh fayli o‘chirildi: {sourceHashFile}");
+                        }
+                        else
+                        {
+                            Log($"MSI kesh fayli topilmadi: {sourceHashFile}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log($"MSI kesh faylini o‘chirishda xato: {ex.Message}");
+                    }
+                }
+
+                // 7. Rejalashtirilgan vazifani o‘chirish
+                try
+                {
+                    string taskName = "DgzAIO";
+                    ProcessStartInfo taskDelete = new ProcessStartInfo
+                    {
+                        FileName = "schtasks",
+                        Arguments = $"/Delete /TN \"{taskName}\" /F",
+                        CreateNoWindow = true,
+                        UseShellExecute = false
+                    };
+                    Process deleteProcess = Process.Start(taskDelete);
+                    deleteProcess.WaitForExit();
+                    Log(deleteProcess.ExitCode == 0 ? $"Rejalashtirilgan vazifa {taskName} o‘chirildi." : $"Rejalashtirilgan vazifa {taskName} topilmadi yoki o‘chirilmadi.");
+                }
+                catch (Exception ex)
+                {
+                    Log($"Rejalashtirilgan vazifani o‘chirishda xato: {ex.Message}");
+                }
+
+                Log("UninstallAgent muvaffaqiyatli yakunlandi.");
                 return true;
             }
             catch (Exception ex)
             {
-                Log($"Xatolik yuz berdi: {ex.Message}");
+                Log($"Uninstall jarayonida xato: {ex.Message}");
                 return false;
-            }
-        }
-
-        private void StopService(string serviceName)
-        {
-            try
-            {
-                using (ServiceController service = new ServiceController(serviceName))
-                {
-                    if (service.Status != ServiceControllerStatus.Stopped)
-                    {
-                        Log($"{serviceName} xizmatini to‘xtatish...");
-                        service.Stop();
-                        service.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(30));
-                        Log($"{serviceName} xizmati to‘xtatildi.");
-                    }
-                    else
-                    {
-                        Log($"{serviceName} xizmati allaqachon to‘xtatilgan.");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log($"Xizmatni to‘xtatishda xato: {ex.Message}");
-            }
-        }
-
-        private bool UninstallMsiFromRegistry()
-        {
-            try
-            {
-                Log("MSI o‘chirish jarayoni boshlandi.");
-                string appName = "DgzAIO"; 
-
-                RegistryKey uninstallKey = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall");
-                if (uninstallKey == null)
-                {
-                    uninstallKey = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall");
-                }
-
-                if (uninstallKey == null)
-                {
-                    Log("Uninstall registry bo‘limi topilmadi.");
-                    return false;
-                }
-
-                // Barcha kalitlarni tekshirish
-                string guid = null;
-                foreach (string subKeyName in uninstallKey.GetSubKeyNames())
-                {
-                    using (RegistryKey subKey = uninstallKey.OpenSubKey(subKeyName))
-                    {
-                        if (subKey == null) continue;
-
-                        string displayName = subKey.GetValue("DisplayName")?.ToString();
-                        if (!string.IsNullOrEmpty(displayName) && displayName.Contains(appName))
-                        {
-                            // Dastur topildi, guid ni olish
-                            string uninstallString = subKey.GetValue("UninstallString")?.ToString();
-                            if (!string.IsNullOrEmpty(uninstallString))
-                            {
-                                // UninstallString dan guid ni ajratib olish (MsiExec.exe /X{guid} shaklida bo‘ladi)
-                                var match = System.Text.RegularExpressions.Regex.Match(uninstallString, @"\{[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\}");
-                                if (match.Success)
-                                {
-                                    guid = match.Value;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-                uninstallKey.Close();
-
-                if (string.IsNullOrEmpty(guid))
-                {
-                    Log($"Dastur topilmadi yoki GUID aniqlanmadi: {appName}");
-                    return false;
-                }
-
-                // MSI dasturini o‘chirish
-                string commandArgs = $"/c MsiExec.exe /x {guid} /qn";
-                Log($"MSI o‘chirilmoqda, command: {commandArgs}");
-
-                ProcessStartInfo psi = new ProcessStartInfo
-                {
-                    FileName = "cmd.exe",
-                    Arguments = commandArgs,
-                    Verb = "runas",
-                    CreateNoWindow = true,
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    WindowStyle = ProcessWindowStyle.Hidden
-                };
-
-                using (Process process = new Process())
-                {
-                    process.StartInfo = psi;
-                    process.Start();
-                    process.WaitForExit();
-
-                    if (process.ExitCode == 0)
-                    {
-                        Log("MSI muvaffaqiyatli o‘chirildi.");
-                        return true;
-                    }
-                    else
-                    {
-                        string error = process.StandardError.ReadToEnd();
-                        Log($"MSI o‘chirishda xato, exit code: {process.ExitCode}, xabar: {error}");
-                        return false;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log($"MSI o‘chirishda xato: {ex.Message}");
-                return false;
-            }
-        }
-
-        private void CleanupFiles()
-        {
-            try
-            {
-                string agentFolder = @"C:\Program Files\DgzAIOAgent"; // Agent papkasini o‘zgartiring
-                if (Directory.Exists(agentFolder))
-                {
-                    Directory.Delete(agentFolder, true);
-                    Log($"{agentFolder} papkasi o‘chirildi.");
-                }
-            }
-            catch (Exception ex)
-            {
-                Log($"Fayllarni o‘chirishda xato: {ex.Message}");
             }
         }
 
@@ -275,22 +300,5 @@ namespace DgzAIOWindowsService
             return Uri.UnescapeDataString(baseUri.MakeRelativeUri(fullUri).ToString().Replace('/', Path.DirectorySeparatorChar));
         }
         
-
-        
-        private static void LogError(string message)
-        {
-            string logDir = @"C:\LogDgz";
-            string logFilePath = Path.Combine(logDir, "error_log.txt");
-
-            // Katalog mavjudligini tekshirib chiqing, agar mavjud bo'lmasa yaratilsin
-            if (!Directory.Exists(logDir))
-            {
-                Directory.CreateDirectory(logDir);
-            }
-
-            // Log yozish
-            File.AppendAllText(logFilePath, $"{DateTime.Now}: {message}\n");
-        }
-
     }
 }

@@ -1,15 +1,14 @@
-﻿using System.Reflection;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("DgzAIO")]
-[assembly: AssemblyDescription("Datagaze all in one client application")]
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Datagaze LLC")]
-[assembly: AssemblyProduct("DgzAIO")]
+[assembly: AssemblyTitle("CustomAction_uninstall")]
+[assembly: AssemblyDescription("")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("CustomAction_uninstall")]
 [assembly: AssemblyCopyright("Copyright ©  2025")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +19,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("bcd59c80-9b80-44ab-8fc5-41e3788df6b7")]
+[assembly: Guid("7c42a9fe-a888-4dd7-b026-78fb007e80bf")]
 
 // Version information for an assembly consists of the following four values:
 //
@@ -29,5 +28,8 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
+// You can specify all the values or you can default the Build and Revision Numbers
+// by using the '*' as shown below:
+// [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("2.3.0.0")]
+[assembly: AssemblyFileVersion("1.0.0.0")]

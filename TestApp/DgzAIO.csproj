@@ -168,6 +168,10 @@
       <Project>{bfb35898-7755-448f-8924-52f9c34d49b8}</Project>
       <Name>ComputerInformation</Name>
     </ProjectReference>
+    <ProjectReference Include="..\CustomAction_uninstall\CustomAction_uninstall.csproj">
+      <Project>{7c42a9fe-a888-4dd7-b026-78fb007e80bf}</Project>
+      <Name>CustomAction_uninstall</Name>
+    </ProjectReference>
     <ProjectReference Include="..\DBHelper\DBHelper.csproj">
       <Project>{9b48b5cf-67fa-419d-84bf-17e5de36f4db}</Project>
       <Name>DBHelper</Name>
