@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -8,13 +9,14 @@ using System.Windows.Threading;
 using ApplicationMonitor;
 using DBHelper;
 using DgzAIO.HttpService;
+using Newtonsoft.Json;
 
 namespace DgzAIO
 {
     public class Modules
     {
         public static void Start()
-        { 
+        {
             if (StartDBHelper())
             {
                 StartApiClient();
@@ -39,12 +41,12 @@ namespace DgzAIO
 
                 SQLiteHelper.CreateTablesIfNotExists();
 
-                return true;  
+                return true;
             }
             else
             {
                 Console.WriteLine("[DBHelper] Xatolik yuz berdi!");
-                return false;  
+                return false;
             }
         }
         public static void StartComputerInformation()
@@ -59,32 +61,6 @@ namespace DgzAIO
             SQLiteHelper.WriteLog("Modules", "StartComputerInformationThread", "Timer boshlanmoqda...");
             StartTimer();
         }
-
-        //public static void StartDBHelper()
-        //{
-        //    Thread thread = new Thread(new ThreadStart(StartDBHelperThread));
-        //    thread.Start();
-        //}
-
-        //private static void StartDBHelperThread()
-        //{
-        //    Console.WriteLine("[DBHelper] SQLite ulanishi amalga oshirilmoqda...");
-
-        //    var connection = SQLiteHelper.CreateConnection();
-        //    if (connection != null)
-        //    {
-        //        //SQLiteHelper.ClearLogs();
-        //        SQLiteHelper.WriteLog("Modules", "StartDBHelperThread", "SQLite ulanishi muvaffaqiyatli amalga oshirildi");
-        //        Console.WriteLine("[DBHelper] SQLite ulanishi muvaffaqiyatli!");
-
-        //        SQLiteHelper.CreateTablesIfNotExists();
-        //    }
-        //    else
-        //    {
-        //        SQLiteHelper.WriteLog("Modules", "StartDBHelperThread", "SQLite ulanishi muvaffaqiyatsiz tugadi");
-        //        Console.WriteLine("[DBHelper] Xatolik yuz berdi!");
-        //    }
-        //}
 
         public static void StartApplicationMonitor()
         {
@@ -116,11 +92,9 @@ namespace DgzAIO
 
                 var socketManager = new SocketClient.SocketClient();
 
-                Console.WriteLine($"  ----------  ");
 
                 bool isConnected = await socketManager.StartSocketListener();
 
-                Console.WriteLine($"  ----------   {isConnected.ToString()}");
 
                 if (isConnected)
                 {
@@ -213,6 +187,27 @@ namespace DgzAIO
             };
 
             timer.Start();
+        }
+
+        public static void Exe_info_CreateJson()
+        {
+            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+
+            string sourceDir = Path.GetFullPath(Path.Combine(baseDir, @"..\..\..\TestApp\bin\Release"));
+            string exePath = Path.Combine(sourceDir, "DgzAIO.exe");
+            string jsonPath = Path.Combine(sourceDir, "agent_update_info.json");
+
+
+            string version = System.Diagnostics.FileVersionInfo.GetVersionInfo(exePath).FileVersion;
+            var updateInfo = new
+            {
+                version = version,
+            };
+
+            string json = JsonConvert.SerializeObject(updateInfo, Formatting.Indented);
+            File.WriteAllText(jsonPath, json);
+            Console.WriteLine("Update info json tayyorlandi!");
+
         }
     }
 }

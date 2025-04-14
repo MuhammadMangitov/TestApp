@@ -9,31 +9,12 @@ using System.Threading.Tasks;
 
 namespace DgzAIO.HttpService
 {
-    public class ConfigurationManager
+    public class ConfigurationManagerApiClient
     {
-        public static IConfiguration Configuration { get; }
-
-        static ConfigurationManager()
+        public static class ApiConfig
         {
-            try
-            {
-                var builder = new ConfigurationBuilder()
-                    .SetBasePath(AppContext.BaseDirectory)
-                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
-
-                Configuration = builder.Build();
-                Console.WriteLine("[ConfigurationManager] appsettings.json muvaffaqiyatli o‘qildi.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[ConfigurationManager] Xatolik yuz berdi: {ex.Message}");
-            }
+            public static string BaseUrl => Environment.GetEnvironmentVariable("API_BASE_URL") ?? "http://3.145.147.3:3004/agent/computer/register-or-update";
+            public static string BaseUrlForApps => Environment.GetEnvironmentVariable("API_BASE_URL_APPS") ?? "http://3.145.147.3:3004/agent/application/register";
         }
-
-        public static string GetBaseUrl() => Configuration["ApiConfig:BaseUrl"];
-        public static string GetBaseUrlForApps() => Configuration["ApiConfig:BaseUrlForApps"];
-        public static string GetSocketServerUrl() => Configuration["SocketSettings:ServerUrl"];
-        public static string GetInstallerApiUrl() => Configuration["SocketSettings:InstallerApiUrl"];
-        public static string GetUpdateApiUrl() => Configuration["SocketSettings:UpdateApiUrl"];
     }
 }

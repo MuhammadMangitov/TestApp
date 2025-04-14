@@ -9,10 +9,12 @@ using System.Net.Http.Headers;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using DgzAIOWindowsService;
 using DgzAIO.HttpService;
 using DBHelper;
 using SocketClient.Models;
 using ApplicationMonitor;
+using System.ServiceModel;
 
 namespace SocketClient  
 {
@@ -24,7 +26,8 @@ namespace SocketClient
 
         public SocketClient()
         {
-            string socketUrl = "ws://16.171.135.170:3501";
+            string socketUrl = ConfigurationManagerSocket.SocketSettings.ServerUrl;
+
             client = new SocketIOClient.SocketIO(socketUrl, new SocketIOOptions
             {
                 Reconnection = true,
@@ -61,13 +64,17 @@ namespace SocketClient
                 await HandleAppCommand(commandData);
             });
 
-            client.On("delete_agent", async response =>
+            client.On("delete_agent", response =>
             {
                 Console.WriteLine("Agentni o‘chirish buyrildi.");
                 SQLiteHelper.WriteLog("SocketClient", "RegisterEvents", "Agentni o‘chirish buyrildi.");
-                await DeleteAgentAsync();
-            });
+                var productCode = GetMsiProductCode();
+                SQLiteHelper.WriteLog("SocketClient", "RegisterEvents", $"{productCode}");
 
+                SendUninstallToService();
+                SQLiteHelper.WriteLog("SocketClient", "RegisterEvents", "Agentni o‘chirish so‘rovi xizmatga yuborildi.");
+
+            });
         }
 
         public async Task<bool> StartSocketListener()
@@ -76,7 +83,7 @@ namespace SocketClient
             {   
                 string jwtToken = await SQLiteHelper.GetJwtToken();
                 
-                Console.WriteLine($"JWT Token socket uchun : {jwtToken}"); // Tokenni tekshirish uchun
+                //Console.WriteLine($"JWT Token socket uchun : {jwtToken}"); 
 
                 if (string.IsNullOrEmpty(jwtToken))
                 {
@@ -142,59 +149,80 @@ namespace SocketClient
             }
         }
 
-        
-        public async Task<bool> DeleteAgentAsync()
+        [ServiceContract]
+        interface IAgentService
         {
-            try
+            [OperationContract]
+            bool UninstallAgent();
+        }
+        private void SendUninstallToService()
+        {
+            Console.WriteLine("Agentni o‘chirish so‘rovi xizmatga yuborilmoqda...");
+
+            var binding = new NetNamedPipeBinding();
+            var endpoint = new EndpointAddress("net.pipe://localhost/DgzAIOWindowsService");
+
+            using (var factory = new ChannelFactory<IAgentService>(binding, endpoint))
             {
-                string productCode = GetMsiProductCode();
-                if (string.IsNullOrEmpty(productCode))
+                var channel = factory.CreateChannel();
+                var clientChannel = (IClientChannel)channel;
+
+                bool success = false;
+
+                try
                 {
-                    Console.WriteLine("ProductCode topilmadi!");
-                    await EmitDeleteResponse("error", "ProductCode topilmadi!");
-                    return false;
+                    channel.UninstallAgent();
+                    success = true;
+                    Log("Agentni o‘chirish so‘rovi xizmatga yuborildi.");
                 }
-
-                Console.WriteLine($"ProductCode: {productCode}");
-
-                await EmitDeleteResponse("in_progress", "Agent o‘chirish jarayoni boshlandi.");
-
-                Process process = new Process
+                catch (EndpointNotFoundException)
                 {
-                    StartInfo = new ProcessStartInfo
+                    Console.WriteLine("❌ Xizmat topilmadi, iltimos xizmat ishga tushirilganligini tekshiring.");
+                    Log("❌ Xizmat topilmadi, iltimos xizmat ishga tushirilganligini tekshiring.");
+                }
+                catch (CommunicationException ex)
+                {
+                    Console.WriteLine($"❌ WCF aloqa xatosi: {ex.Message}");
+                    Log($"❌ WCF aloqa xatosi: {ex.Message}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"❌ Xatolik: {ex.Message}");
+                    Log($"❌ Xatolik: {ex.Message}");
+                }
+                finally
+                {
+                    try
                     {
-                        FileName = "msiexec",
-                        Arguments = $"/x {productCode} /qn /norestart",
-                        RedirectStandardOutput = false,
-                        RedirectStandardError = false,
-                        UseShellExecute = true,
-                        CreateNoWindow = true
+                        if (clientChannel.State != CommunicationState.Faulted)
+                        {
+                            clientChannel.Close();
+                        }
+                        else
+                        {
+                            clientChannel.Abort();
+                        }
                     }
-                };
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"❌ Channelni yopishda xatolik: {ex.Message}");
+                        Log($"❌ Channelni yopishda xatolik: {ex.Message}");
+                    }
 
-                bool started = process.Start();
-                if (!started)
-                {
-                    Console.WriteLine("MSI o‘chirishni boshlashda xatolik!");
-                    await EmitDeleteResponse("error", "MSI o‘chirishni boshlashda xatolik yuz berdi!");
-                    return false;
+                    if (success)
+                    {
+                        Console.WriteLine("✅ Agentni o‘chirish so‘rovi xizmatga muvaffaqiyatli yuborildi.");
+                        Log("✅ Agentni o‘chirish so‘rovi xizmatga muvaffaqiyatli yuborildi.");
+                    }
                 }
-
-                Console.WriteLine("O‘chirish jarayoni boshlandi.");
-                await EmitDeleteResponse("success", "Agent o‘chirish jarayoni ishga tushdi.");
-
-                Environment.Exit(0);
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"O‘chirishda xatolik: {ex.Message}");
-                await EmitDeleteResponse("error", $"Xatolik: {ex.Message}");
-                SQLiteHelper.WriteError($"O‘chirishda xatolik: {ex.Message}");
-                return false;
             }
         }
+        private void Log(string message)
+        {
+            // Yaxshi amaliyot - log faylga yozish
+            File.AppendAllText(@"C:\LogDgz\AgentUninstallLog.txt", $"{DateTime.Now} - {message}\n");
+        }
+       
         public static string GetMsiProductCode()
         {
             string uninstallKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall";
@@ -206,12 +234,17 @@ namespace SocketClient
             string wow64Key = @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall";
             return FindProductCode(Registry.LocalMachine, wow64Key, displayName);
         }
+
         private static string GetInstalledAgentName()
         {
             string processName = Process.GetCurrentProcess().ProcessName;
-            string agentName = processName.Split('.').FirstOrDefault(); 
+            SQLiteHelper.WriteLog("SocketIo", "GetInstallAgentName", $"Process name: {processName}");
+            string agentName = processName.Split('.').FirstOrDefault();
+            SQLiteHelper.WriteLog("SocketIo", "GetInstallAgentName", $"Agent name: {agentName}");
+
             return agentName;
         }
+
         private static string FindProductCode(RegistryKey rootKey, string subKeyPath, string targetName)
         {
             try
@@ -248,8 +281,8 @@ namespace SocketClient
                 string jwtToken = await SQLiteHelper.GetJwtToken();
                 if (string.IsNullOrEmpty(jwtToken)) return false;
 
-                //string apiUrl = ConfigurationManager.GetInstallerApiUrl();
-                string apiUrl = "http://16.171.135.170:4000/agents";
+                string apiUrl = ConfigurationManagerSocket.SocketSettings.InstallerApiUrl;
+
                 string requestUrl = $"{apiUrl}/{appName}";
                 string savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), $"{appName}");
                 //string savePath = Path.Combine(Path.GetTempPath(), $"{appName}");
