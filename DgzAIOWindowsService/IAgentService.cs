@@ -9,6 +9,6 @@ namespace DgzAIOWindowsService
         void UpdateAgent(string zipPath);
 
         [OperationContract]
-        bool UninstallAgent();
+        void UninstallAgent();
     }
 }

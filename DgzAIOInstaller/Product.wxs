@@ -1,15 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-	<Product Id="{4DDE4511-CDAC-4B81-A5D1-880D625B8DD3}" Name="DgzAIO" Language="1033" Version="0.0.0.1" Manufacturer="WixEdit" UpgradeCode="5D3D5F89-6BE8-478D-B0E7-7D9D73251846">
-		<Package Description="Test file in a Product" Comments="Simple test" InstallerVersion="200" Compressed="yes" />
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"><?define DgzAIO_TargetDir=$(var.DgzAIO.TargetDir)?>
+	<Product Id="*" Name="DgzAIO" Language="1033" Version="0.1.1.1" Manufacturer="Dgz LLC" UpgradeCode="5D3D5F89-6BE8-478D-B0E7-7D9D73251846">
+		<Package Description="Test file in a Product" Comments="Simple test" InstallerVersion="200" Compressed="yes"/>
+		<Property Id="MSICACHEORIGINALPACKAGE" Value="1" />
+		<Property Id="MsiLogging" Value="voicewarmup" />
 		<Binary Id="CustomActionDLL" SourceFile="..\CustomAction_uninstall\bin\Release\CustomAction_uninstall.CA.dll" />
 
-		<CustomAction Id="RunCustomAction"
-					  BinaryKey="CustomActionDLL"
-					  DllEntry="CustomAction_uninstall"
-					  Execute="deferred"
-					  Return="check"
-					  Impersonate="no" />
+		<CustomAction Id="RunCustomAction" BinaryKey="CustomActionDLL" DllEntry="CustomAction_uninstall" Execute="deferred" Return="check" Impersonate="no" />
 
 		<InstallExecuteSequence>
 			<Custom Action="RunCustomAction" Before="RemoveFiles">REMOVE="ALL"</Custom>
@@ -18,36 +15,40 @@
 		
 		<Directory Id="TARGETDIR" Name="SourceDir">
 			<Directory Id="ProgramFilesFolder">
-				<Directory Id="INSTALLFOLDER" Name="YourProductFolder">
+				<Directory Id="INSTALLFOLDER" Name="DgzAIO">
+
+					<Component Id="CleanupComponent" Guid="{88432D84-0665-47BE-96D5-627D69889D32}">
+						<CreateFolder Directory="INSTALLFOLDER" />
+						<RemoveFile Id="RemoveAllFiles" Name="*.*" On="uninstall" Directory="INSTALLFOLDER" />
+						<RemoveFolder Id="RemoveInstallFolder" On="uninstall" Directory="INSTALLFOLDER" />
+					</Component>
 					
 					<Component Id="RegistryComponent" Guid="{74178BB3-C00B-4D62-BAA7-1D27F4C5DCC7}">
-						<RegistryKey Root="HKLM"
-                                     Key="SOFTWARE\Datagaze\DLP"
-                                     Action="createAndRemoveOnUninstall">
-							<RegistryValue Name="guid" Type="string" Value="{4DDE4511-CDAC-4B81-A5D1-880D625B8DD3}" KeyPath="yes"/>
+						<RegistryKey Root="HKLM" Key="SOFTWARE\Datagaze\DLP" Action="createAndRemoveOnUninstall">
+							<RegistryValue Name="guid" Type="string" Value="[ProductCode]" KeyPath="yes" />
 						</RegistryKey>
-						
 					</Component>
-				</Directory>
-				<Directory Id="Dgz" Name="DgzAIO">
+
+					<Component Id="RegistryUninstall" Guid="{A1B2C3D4-E5F6-7890-ABCD-1234567890EF}">
+						<RegistryKey Root="HKLM" Key="SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\[ProductCode]" 
+									 Action="createAndRemoveOnUninstall">
+							<RegistryValue Name="DisplayName" Type="string" Value="DgzAIO" />
+							<RegistryValue Name="Publisher" Type="string" Value="Dgz LLC" />
+							<RegistryValue Name="DisplayVersion" Type="string" Value="0.1.1.1" />
+							<RegistryValue Name="InstallSource" Type="string" Value="[SourceDir]" />
+							<RegistryValue Name="InstallLocation" Type="string" Value="[INSTALLFOLDER]" />
+							<RegistryValue Name="UninstallString" Type="string" Value="MsiExec.exe /x[ProductCode]" />
+							<RegistryValue Name="QuietUninstallString" Type="string" Value="MsiExec.exe /x[ProductCode] /qn" />
+							<RegistryValue Name="NoModify" Type="integer" Value="1" />
+							<RegistryValue Name="NoRepair" Type="integer" Value="1" />
+							<RegistryValue Name="EstimatedSize" Type="integer" Value="10240" />
+						</RegistryKey>
+					</Component>
+					
 					<Component Id="DgzAIOServiceComponent" Guid="A3BB6943-C53E-4CC7-BB5C-EF98F915AE50">
-						<File Id="DgzAIOServiceExe"
-						  Name="DgzAIOWindowsService.exe"
-						  Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\DgzAIOWindowsService\bin\Release\DgzAIOWindowsService.exe"/>
-						<ServiceInstall Id="DgzAIOServiceInstaller"
-						  Name="DgzAIOService"
-						  DisplayName="DgzAIO Windows Service"
-						  Description="DgzAIO xizmatlari uchun Windows Service"
-						  Start="auto"
-						  Type="ownProcess"
-						  Account="LocalSystem"
-						  ErrorControl="normal"/>
-						<ServiceControl Id="StartDgzAIOService"
-						  Name="DgzAIOService"
-						  Start="install"
-						  Stop="both"
-						  Remove="uninstall"
-						  Wait="yes" />
+						<File Id="DgzAIOServiceExe" Name="DgzAIOWindowsService.exe" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\DgzAIOWindowsService\bin\Release\DgzAIOWindowsService.exe" />
+						<ServiceInstall Id="DgzAIOServiceInstaller" Name="DgzAIOService" DisplayName="DgzAIO Windows Service" Description="DgzAIO xizmatlari uchun Windows Service" Start="auto" Type="ownProcess" Account="LocalSystem" ErrorControl="normal" />
+						<ServiceControl Id="StartDgzAIOService" Name="DgzAIOService" Start="install" Stop="both" Remove="uninstall" Wait="yes" />
 					</Component>
 
 					<Component Id="APPLICATIONMONITOR.DLL" DiskId="1" Guid="D88BFEEE-73C0-40A9-9633-F051B9808FF8">
@@ -205,13 +206,16 @@
 						</Component>
 					</Directory>
 				</Directory>
+				<Directory Id="ILLink" Name="ILLink" />
 			</Directory>
 		</Directory>
 		<Feature Id="DefaultFeature" Title="Main Feature" Level="1">
 			<ComponentRef Id="DgzAIOServiceComponent" />
 			<ComponentRef Id="RegistryComponent" />
+			<ComponentRef Id="RegistryUninstall" />
 			<ComponentRef Id="APPLICATIONMONITOR.DLL" />
 			<ComponentRef Id="COMPUTERINFORMATION.DLL" />
+			<ComponentRef Id="CleanupComponent" />
 			<ComponentRef Id="CUSTOMACTION_UNINSTALL.DLL" />
 			<ComponentRef Id="DBHELPER.DLL" />
 			<ComponentRef Id="DGZAIO.EXE" />

@@ -1,6 +1,139 @@
+/*using System;
+using System.Diagnostics;
+using System.IO;
+using Microsoft.Deployment.WindowsInstaller;
+
+namespace CustomAction_uninstall
+{
+    public class CustomActions
+    {
+        private static Session session;
+
+        private static void Log(string text)
+        {
+            try
+            {
+                string logFilePath = "C:\\Logs\\CustomActionLog.txt";
+                Directory.CreateDirectory(Path.GetDirectoryName(logFilePath));
+                using (StreamWriter writer = new StreamWriter(logFilePath, true))
+                {
+                    writer.WriteLine($"{DateTime.Now}: {text}");
+                }
+            }
+            catch (Exception ex)
+            {
+                session?.Log($"Error writing log: {ex.Message}");
+            }
+
+            session?.Log(text);
+        }
+
+        [CustomAction]
+        public static ActionResult CustomAction_uninstall(Session session)
+        {
+            CustomActions.session = session;
+            session.Log("CustomAction_uninstall started.");
+            Log("CustomAction_uninstall started.");
+
+            try
+            {
+                Process[] processes = Process.GetProcessesByName("DgzAIO");
+                foreach (Process process in processes)
+                {
+                    try
+                    {
+                        process.CloseMainWindow();
+                        process.WaitForExit(5000); // 5 soniya kutish
+                        if (!process.HasExited)
+                        {
+                            process.Kill();
+                            Log("Process DgzAIO.exe was forcibly terminated.");
+                        }
+                        else
+                        {
+                            Log("Process DgzAIO.exe was gracefully terminated.");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log($"Error terminating process: {ex.Message}");
+                    }
+                }
+
+                string taskName = "DgzAIO";
+                try
+                {
+                    var taskDelete = new Process
+                    {
+                        StartInfo = new ProcessStartInfo
+                        {
+                            FileName = "schtasks",
+                            Arguments = $"/Delete /TN \"{taskName}\" /F",
+                            UseShellExecute = false,
+                            CreateNoWindow = true
+                        }
+                    };
+                    taskDelete.Start();
+                    taskDelete.WaitForExit();
+                    Log(taskDelete.ExitCode == 0
+                        ? $"Scheduled task {taskName} deleted."
+                        : $"Warning: Could not delete scheduled task {taskName}.");
+                }
+                catch (Exception ex)
+                {
+                    Log($"Error deleting scheduled task: {ex.Message}");
+                }
+
+                string programDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "DgzAIO");
+                if (Directory.Exists(programDataPath))
+                {
+                    Log($"Deleting folder: {programDataPath}");
+                    try
+                    {
+                        foreach (string file in Directory.GetFiles(programDataPath, "*", SearchOption.AllDirectories))
+                        {
+                            try
+                            {
+                                File.SetAttributes(file, System.IO.FileAttributes.Normal);
+                                File.Delete(file);
+                                Log($"Deleted file: {file}");
+                            }
+                            catch (IOException ex)
+                            {
+                                Log($"Cannot delete {file}: {ex.Message}");
+                            }
+                        }
+                        Directory.Delete(programDataPath, true);
+                        Log($"Deleted folder: {programDataPath}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Log($"Error deleting {programDataPath}: {ex.Message}");
+                    }
+                }
+                else
+                {
+                    Log($"Folder {programDataPath} does not exist.");
+                }
+
+                session.Log("CustomAction_uninstall completed successfully.");
+                Log("CustomAction_uninstall completed successfully.");
+                return ActionResult.Success;
+            }
+            catch (Exception ex)
+            {
+                Log($"ERROR in CustomAction_uninstall: {ex.Message}");
+                session.Log($"ERROR in CustomAction_uninstall: {ex.Message}");
+                return ActionResult.Failure;
+            }
+        }
+    }
+}*/
+
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.ServiceProcess;
 using Microsoft.Deployment.WindowsInstaller;
 using Microsoft.Win32;
 
@@ -19,7 +152,7 @@ namespace CustomAction_uninstall
                 string logFilePath = @"C:\Logs\CustomActionLog.txt";
                 using (StreamWriter writer = new StreamWriter(logFilePath, true))
                 {
-                    writer.WriteLine($"{DateTime.Now}: {text}"); 
+                    writer.WriteLine($"{DateTime.Now}: {text}");
                 }
             }
             catch (Exception ex)
@@ -36,10 +169,28 @@ namespace CustomAction_uninstall
         [CustomAction]
         public static ActionResult CustomAction_uninstall(Session session)
         {
-            CustomActions.session = session; 
+            CustomActions.session = session;
             session.Log("CustomAction_uninstall started.");
             Log("CustomAction_uninstall started.");
+            
+            var serviceName = "DgzAIOService";
 
+            try
+            {
+                ServiceController sc = new ServiceController(serviceName);
+                if (sc.Status != ServiceControllerStatus.Stopped)
+                {
+                    sc.Stop();
+                    Log($"Stopping service {serviceName}...");
+                    sc.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(15));
+                }
+                Process.Start("sc", $"delete {serviceName}").WaitForExit();
+                Log($"{serviceName} service deleted.");
+            }
+            catch (Exception ex)
+            {
+                EventLog.WriteEntry("ServiceHelper", ex.Message, EventLogEntryType.Error);
+            }
             try
             {
                 string processName = "DgzAIO.exe";
@@ -150,63 +301,6 @@ namespace CustomAction_uninstall
                 {
                     Log($"Warning: Could not delete scheduled task {taskName}. It may not exist.");
                     session.Log($"Warning: Could not delete scheduled task {taskName}. It may not exist.");
-                }
-
-                // 5. Registrni tozalash
-                session.Log("Cleaning registry keys...");
-
-                try
-                {
-
-                    Registry.LocalMachine.DeleteSubKeyTree(@"SOFTWARE\WOW6432Node\Datagaze\DLP", false);
-                    Log("Registry key deleted: SOFTWARE\\WOW6432Node\\Datagaze\\DLP");
-                    session.Log("Registry key deleted: SOFTWARE\\WOW6432Node\\Datagaze\\DLP");
-                }
-                catch (Exception ex)
-                {
-                    Log($"Error deleting registry key SOFTWARE\\WOW6432Node\\Datagaze\\DLP: {ex.Message}");
-                    session.Log($"Error deleting registry key SOFTWARE\\WOW6432Node\\Datagaze\\DLP: {ex.Message}");
-                }
-
-                try
-                {
-
-                    Registry.LocalMachine.DeleteSubKeyTree(@"SOFTWARE\Datagaze\DLP", false);
-                    Log("Registry key deleted: SOFTWARE\\Datagaze\\DLP");
-                    session.Log("Registry key deleted: SOFTWARE\\Datagaze\\DLP");
-                }
-                catch (Exception ex)
-                {
-                    Log($"Error deleting registry key SOFTWARE\\Datagaze\\DLP: {ex.Message}");
-                    session.Log($"Error deleting registry key SOFTWARE\\Datagaze\\DLP: {ex.Message}");
-                }
-
-                // 6. MSI keshini tozalash
-                string guid = "4DDE4511-CDAC-4B81-A5D1-880D625B8DD3";
-                session.Log($"Cleaning MSI cache for GUID {{{guid}}}...");
-
-                try
-                {
-                    string installerPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Installer");
-                    string sourceHashFile = Path.Combine(installerPath, $"SourceHash{{{guid}}}");
-                    if (File.Exists(sourceHashFile))
-                    {
-
-                        File.SetAttributes(sourceHashFile, System.IO.FileAttributes.Normal);
-                        File.Delete(sourceHashFile);
-                        Log($"MSI cache file deleted: {sourceHashFile}");
-                        session.Log($"MSI cache file deleted: {sourceHashFile}");
-                    }
-                    else
-                    {
-                        Log($"MSI cache file not found: {sourceHashFile}");
-                        session.Log($"MSI cache file not found: {sourceHashFile}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log($"Error deleting MSI cache file: {ex.Message}");
-                    session.Log($"Error deleting MSI cache file: {ex.Message}");
                 }
 
                 session.Log("CustomAction_uninstall completed successfully.");

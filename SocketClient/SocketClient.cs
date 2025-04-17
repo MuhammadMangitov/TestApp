@@ -154,7 +154,7 @@ namespace SocketClient
         interface IAgentService
         {
             [OperationContract]
-            bool UninstallAgent();
+            void UninstallAgent();
         }
         private void SendUninstallToService()
         {
