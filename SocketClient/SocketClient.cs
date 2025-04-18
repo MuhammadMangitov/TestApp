@@ -24,12 +24,15 @@ namespace SocketClient
         private bool isRegistered = false;
         private static readonly HttpClient httpClient = new HttpClient();
 
+        string apiUrl = ConfigurationManagerSocket.SocketSettings.InstallerApiUrl;
+        string socketUrl = ConfigurationManagerSocket.SocketSettings.ServerUrl;
+
+
         public SocketClient()
         {
-            string socketUrl = ConfigurationManagerSocket.SocketSettings.ServerUrl;
-
             client = new SocketIOClient.SocketIO(socketUrl, new SocketIOOptions
             {
+                Transport = SocketIOClient.Transport.TransportProtocol.WebSocket,
                 Reconnection = true,
                 ReconnectionAttempts = 5,
                 ReconnectionDelay = 2000,
@@ -50,6 +53,13 @@ namespace SocketClient
                     isRegistered = true;
                     Console.WriteLine("Client ro‘yxatga olindi.");
                 }
+            });
+
+            client.On("connect_error", response =>
+            {
+                Console.WriteLine("Socket connect_error:");
+                Console.WriteLine(response.ToString());
+                SQLiteHelper.WriteError($"Socket connect_error: {response}");
             });
 
             client.On("command", async response =>
@@ -85,7 +95,7 @@ namespace SocketClient
             {   
                 string jwtToken = await SQLiteHelper.GetJwtToken();
                 
-                //Console.WriteLine($"JWT Token socket uchun : {jwtToken}"); 
+                Console.WriteLine($"JWT Token socket uchun : {jwtToken}"); 
 
                 if (string.IsNullOrEmpty(jwtToken))
                 {
@@ -93,9 +103,16 @@ namespace SocketClient
                     return false;
                 }
 
-                client.Options.ExtraHeaders = new Dictionary<string, string> { { "Authorization", $"Bearer {jwtToken}" } };
+
+                client.Options.ExtraHeaders = new Dictionary<string, string> { { "authorization", $"Bearer {jwtToken}" } };
+
+
+                Console.WriteLine($"SocketURL: {socketUrl}");
 
                 await client.ConnectAsync();
+
+                Console.WriteLine($"SocketURL: {socketUrl}");
+                Console.WriteLine($"Token header: Bearer {jwtToken}");
 
                 if (!client.Connected)
                 {
@@ -281,9 +298,7 @@ namespace SocketClient
                 string jwtToken = await SQLiteHelper.GetJwtToken();
                 if (string.IsNullOrEmpty(jwtToken)) return false;
 
-                string apiUrl = ConfigurationManagerSocket.SocketSettings.InstallerApiUrl;
-
-                string requestUrl = $"{apiUrl}/{appName}";
+                string requestUrl = $"{apiUrl}{appName}";
                 string savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), $"{appName}");
                 //string savePath = Path.Combine(Path.GetTempPath(), $"{appName}");
 
@@ -454,6 +469,7 @@ namespace SocketClient
             await client.EmitAsync("response", result);
             SQLiteHelper.WriteLog("SocketClient", "EmitResponseAsync", $"Command: {command}, Status: {result.status}");
         }
+
         private async Task EmitDeleteResponse(string status, string message)
         {
             await client.EmitAsync("delete_agent", new

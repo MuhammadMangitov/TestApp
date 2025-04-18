@@ -92,7 +92,6 @@ namespace DgzAIO
 
                 var socketManager = new SocketClient.SocketClient();
 
-
                 bool isConnected = await socketManager.StartSocketListener();
 
 

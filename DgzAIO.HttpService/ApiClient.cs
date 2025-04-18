@@ -41,7 +41,7 @@ namespace DgzAIO.HttpService
                     var jsonResponse = JsonConvert.DeserializeObject<dynamic>(responseBody);
 
                     string token = jsonResponse?.token;
-
+                    Console.WriteLine($"JWT token apidan kelgan: {token}");
                     return (token, statusCode);
                 }
                 else
