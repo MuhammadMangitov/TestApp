@@ -7,6 +7,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Management;
+using System.Runtime.InteropServices;
 using System.ServiceModel;
 using System.ServiceProcess;
 using System.Text;
@@ -18,6 +19,204 @@ namespace DgzAIOWindowsService
     {
 
         private static readonly string LogFilePath = @"C:\Logs\AgentService.log";
+
+        [DllImport("msi.dll", CharSet = CharSet.Auto)]
+        private static extern int MsiQueryProductState(string productCode);
+
+        public void UninstallAgent()
+        {
+            try
+            {
+                string guid = ReadProductGUID();
+                if (string.IsNullOrEmpty(guid))
+                {
+                    Log("[Uninstall] GUID topilmadi. Uninstall bekor qilindi.");
+                    return;
+                }
+
+                // MSI API orqali mahsulot holatini tekshiramiz.
+                // Agar MsiQueryProductState() manfiy (0 dan kichik) bo‘lsa, mahsulot o‘rnatilmagan.
+                int state = MsiQueryProductState(guid);
+                Log($"[Uninstall] Mahsulot holati: {state} (0 - o‘rnatilgan, 1 - o‘rnatilmagan, -1 - xato).");
+                if (state < 0)
+                {
+                    Log($"[Uninstall] Mahsulot o‘rnatilmagan (state={state}). Uninstall buyrug‘i bajarilmaydi.");
+                    return;
+                }
+                string command = $"/c \"MsiExec.exe /x{guid} /qn\"";
+                Log($"commands = msiexec.exe -- {command}");
+
+                ProcessStartInfo psi = new ProcessStartInfo()
+                {
+                    FileName = "cmd.exe",
+                    Arguments = command,
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    Verb = "runas",
+                    WindowStyle = ProcessWindowStyle.Hidden
+                };
+
+                Process process = new Process();
+                process.StartInfo = psi;
+
+                Log("Uninstall jarayoni boshlanyapti...");
+                Log($"{psi.Arguments.ToString()}");
+                process.Start();
+
+                if (process != null)
+                {
+                    process.WaitForExit();
+                    int exitCode = process.ExitCode;
+                    if (exitCode == 0)
+                    {
+                        Log("[Uninstall] Uninstallation muvaffaqiyatli yakunlandi.");
+                    }
+                    else if (exitCode == 1605)
+                    {
+                        Log("[Uninstall] Mahsulot topilmadi (error 1605), ehtimol allaqachon o‘chirib tashlangan.");
+                    }
+                    else
+                    {
+                        Log($"[Uninstall] Uninstallation xatoligi: Exit Code {exitCode}");
+                    }
+                }
+                else
+                {
+                    Log("[Uninstall] BAT fayl ishga tushmadi.");
+                }
+
+                Thread.Sleep(5000);
+            }
+            catch (Exception ex)
+            {
+                Log("[Uninstall] Xatolik: " + ex.Message);
+            }
+        }
+        private string ReadProductGUID()
+        {
+            string guid = null;
+            RegistryKey key = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)
+                .OpenSubKey(@"SOFTWARE\Datagaze\DLP", false);
+            if (key != null)
+            {
+                guid = key.GetValue("guid")?.ToString();
+                Log("[Uninstall] (64-bit) GUID: " + guid);
+                key.Close();
+            }
+
+            if (string.IsNullOrEmpty(guid))
+            {
+                key = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32)
+                    .OpenSubKey(@"SOFTWARE\Datagaze\DLP", false);
+                if (key != null)
+                {
+                    guid = key.GetValue("guid")?.ToString();
+                    Log("[Uninstall] (32-bit) GUID: " + guid);
+                    key.Close();
+                }
+            }
+
+            if (!string.IsNullOrEmpty(guid) && !guid.StartsWith("{"))
+            {
+                guid = "{" + guid + "}";
+            }
+            return guid;
+        }
+
+        private void StopService()
+        {
+            try
+            {
+                ServiceController sc = new ServiceController("DgzAIOService");
+                if (sc.Status != ServiceControllerStatus.Stopped &&
+                    sc.Status != ServiceControllerStatus.StopPending)
+                {
+                    sc.Stop();
+                    Log("[Uninstall] Service to'xtatish komandasi yuborildi.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("[Uninstall] Service to'xtatishda xato: " + ex.Message);
+            }
+        }
+
+        /*public void UninstallAgent()
+        {
+            try
+            {
+                string guid = ReadProductGUID();
+                if (string.IsNullOrEmpty(guid))
+                {
+                    Log("[Uninstall] GUID topilmadi. Uninstall bekor qilindi.");
+                    return;
+                }
+
+                // MSI API orqali mahsulot holatini tekshiramiz.
+                // Agar MsiQueryProductState() manfiy (0 dan kichik) bo‘lsa, mahsulot o‘rnatilmagan.
+                int state = MsiQueryProductState(guid);
+                Log($"[Uninstall] Mahsulot holati: {state} (0 - o‘rnatilgan, 1 - o‘rnatilmagan, -1 - xato).");
+                if (state < 0)
+                {
+                    Log($"[Uninstall] Mahsulot o‘rnatilmagan (state={state}). Uninstall buyrug‘i bajarilmaydi.");
+                    return;
+                }
+
+                string dirPath = @"C:\ProgramData";
+                string batPath = Path.Combine(dirPath, "uninstall_agent_1704.bat");
+                string logPath = Path.Combine(dirPath, "uninstall1704.log");
+
+                if (!Directory.Exists(dirPath))
+                    Directory.CreateDirectory(dirPath);
+
+                string batContent = $@"@echo off
+echo Uninstalling product with GUID {guid}
+timeout /t 3
+msiexec /x {guid} /qn /l*v ""{logPath}""
+";
+                File.WriteAllText(batPath, batContent);
+                Log("[Uninstall] BAT fayl yaratilgan: " + batPath);
+
+                ProcessStartInfo psi = new ProcessStartInfo()
+                {
+                    FileName = "cmd.exe",
+                    Arguments = $"/c \"{batPath}\"",
+                    CreateNoWindow = true,
+                    UseShellExecute = true,
+                    Verb = "runas"  // Administrator huquqlarini talab qiladi
+                };
+
+                Process process = Process.Start(psi);
+                if (process != null)
+                {
+                    process.WaitForExit();
+                    int exitCode = process.ExitCode;
+                    if (exitCode == 0)
+                    {
+                        Log("[Uninstall] Uninstallation muvaffaqiyatli yakunlandi.");
+                    }
+                    else if (exitCode == 1605)
+                    {
+                        Log("[Uninstall] Mahsulot topilmadi (error 1605), ehtimol allaqachon o‘chirib tashlangan.");
+                    }
+                    else
+                    {
+                        Log($"[Uninstall] Uninstallation xatoligi: Exit Code {exitCode}");
+                    }
+                }
+                else
+                {
+                    Log("[Uninstall] BAT fayl ishga tushmadi.");
+                }
+
+                Thread.Sleep(5000);
+                StopService();
+            }
+            catch (Exception ex)
+            {
+                Log("[Uninstall] Xatolik: " + ex.Message);
+            }
+        }*/
 
         /*public void UninstallAgent()
     {
@@ -119,70 +318,6 @@ endlocal
             Log($"Xato yuz berdi: {ex.Message}");
         }
     }*/
-
-        public void UninstallAgent()
-        {
-            try
-            {
-                // MSI GUID ni reyestrdan olish
-                RegistryKey key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\WOW6432Node\Datagaze\DLP", false)
-                                    ?? Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Datagaze\DLP", false);
-
-                string guid = null;
-                if (key != null)
-                {
-                    guid = key.GetValue("guid")?.ToString();
-                    Log($"[Uninstall] GUID: {guid}");
-                    key.Close();
-                }
-
-                if (string.IsNullOrEmpty(guid))
-                {
-                    Log("[Uninstall] GUID topilmadi. Uninstall bekor qilindi.");
-                    return;
-                }
-
-                // BAT va Log fayl yo‘llari
-                string dirPath = @"C:\ProgramData";
-                string batPath = Path.Combine(dirPath, "uninstall_agent_1704.bat");
-                string logPath = Path.Combine(dirPath, "uninstall1704.log");
-
-                // Kataloglar mavjud emas bo‘lsa yaratamiz
-                if (!Directory.Exists(dirPath))
-                    Directory.CreateDirectory(dirPath);
-
-                // BAT fayl mazmuni
-                string batContent = $@"
-@echo off
-timeout /t 3
-msiexec /x {guid} /qn /l*v ""{logPath}""
-";
-
-                File.WriteAllText(batPath, batContent);
-
-                // BAT faylni ishga tushirish (Admin huquqda)
-                ProcessStartInfo psi = new ProcessStartInfo()
-                {
-                    FileName = batPath,
-                    CreateNoWindow = true,
-                    UseShellExecute = true,
-                    Verb = "runas"
-                };
-
-                Process.Start(psi);
-                Log("[Uninstall] BAT fayl ishga tushdi: " + batPath);
-
-                // Servisni o‘zini to‘xtatish
-                ServiceController sc = new ServiceController("DgzAIOService");
-                sc.Stop();
-                Log("[Uninstall] Service stop komutasi yuborildi.");
-            }
-            catch (Exception ex)
-            {
-                Log($"[Uninstall] Xatolik: {ex.Message}");
-            }
-        }
-
 
         /*public void UninstallAgent()
         {
@@ -538,48 +673,75 @@ msiexec /x {guid} /qn /l*v ""{logPath}""
 
         public void UpdateAgent(string zipPath)
         {
-            string logDir = @"C:\LogDgz";
-            string tempDir = Path.Combine(Path.GetTempPath(), "DgzAIO_Update");
+            string logDir = @"C:\Logs";
+            string tempDir = Path.Combine("C:\\ProgramData\\DgzAIO", "DgzAIO_Update");
             string targetDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "DgzAIO");
+            string batFilePath = Path.Combine("C:\\ProgramData\\DgzAIO", "update_dgzaio.bat");
+            string logFile = Path.Combine(logDir, "UpdateLog.txt");
 
             try
             {
                 Directory.CreateDirectory(logDir);
 
-                // DgzAIO ni to'xtatish
-                foreach (var process in Process.GetProcessesByName("DgzAIO"))
-                {
-                    try
-                    {
-                        process.CloseMainWindow(); // Yumshoq to'xtatish
-                        if (!process.WaitForExit(3000)) // 3 sek kutish
-                        {
-                            process.Kill(); // Zo'ravon to'xtatish
-                            process.WaitForExit(3000);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        File.AppendAllText(Path.Combine(logDir, "MyServiceErrors.txt"),
-                            $"[{DateTime.Now}] Jarayon to‘xtatishda xato: {ex.Message}\n");
-                    }
-                }
-
-                // Zipni TEMP ga chiqarish
                 if (Directory.Exists(tempDir))
                     Directory.Delete(tempDir, true);
                 ZipFile.ExtractToDirectory(zipPath, tempDir);
 
-                // Fayllarni almashtirish
-                CopyAllFiles(tempDir, targetDir);
+                using (StreamWriter sw = new StreamWriter(batFilePath, false, Encoding.UTF8))
+                {
+                    sw.WriteLine("@echo off");
+                    sw.WriteLine($"echo [{DateTime.Now}] Yangilanish boshlandi. >> \"{logFile}\"");
 
-                // ZIP va TEMP papkalarni tozalash
-                File.Delete(zipPath);
-                Directory.Delete(tempDir, true);
+                    // Servis va dastur to‘xtatilmoqda
+                    sw.WriteLine("echo Servis to'xtatilmoqda... >> \"" + logFile + "\"");
+                    sw.WriteLine("net stop DgzAIOService >> \"" + logFile + "\"");
 
-                // Log
+                    sw.WriteLine("echo Asosiy dastur to'xtatilmoqda... >> \"" + logFile + "\"");
+                    sw.WriteLine("taskkill /F /IM DgzAIO.exe >> \"" + logFile + "\"");
+
+                    // Servis to‘xtashini kutish (majburiy emas, lekin tavsiya etiladi)
+                    sw.WriteLine(":waitloop");
+                    sw.WriteLine("sc query DgzAIOService | find \"RUNNING\" >nul");
+                    sw.WriteLine("if %errorlevel%==0 (");
+                    sw.WriteLine("  timeout /t 1 >nul");
+                    sw.WriteLine("  goto waitloop");
+                    sw.WriteLine(")");
+
+                    sw.WriteLine("timeout /t 2 >nul");
+
+                    // Fayllarni nusxalash
+                    foreach (string sourceFile in Directory.GetFiles(tempDir, "*", SearchOption.AllDirectories))
+                    {
+                        string relativePath = GetRelativePath(tempDir, sourceFile);
+                        string destFile = Path.Combine(targetDir, relativePath);
+                        string destDir = Path.GetDirectoryName(destFile);
+
+                        sw.WriteLine($"if not exist \"{destDir}\" mkdir \"{destDir}\"");
+                        sw.WriteLine($"copy /Y \"{sourceFile}\" \"{destFile}\" >> \"{logFile}\"");
+                    }
+
+                    // Vaqtinchalik fayllarni o‘chirish
+                    /*sw.WriteLine($"echo Vaqtinchalik fayllar o'chirilmoqda... >> \"{logFile}\"");
+                    sw.WriteLine($"del /F /Q \"{zipPath}\" >> \"{logFile}\"");
+                    sw.WriteLine($"rmdir /S /Q \"{tempDir}\" >> \"{logFile}\"");*/
+
+                    // Servisni ishga tushirish
+                    sw.WriteLine("echo Servis ishga tushirilmoqda... >> \"" + logFile + "\"");
+                    sw.WriteLine("net start DgzAIOService >> \"" + logFile + "\"");
+
+                    sw.WriteLine($"echo [{DateTime.Now}] Yangilanish tugadi. >> \"{logFile}\"");
+                    sw.WriteLine("exit");
+                }
+
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = batFilePath,
+                    UseShellExecute = true,
+                    Verb = "runas" // Admin huquqda ishga tushadi
+                });
+
                 File.AppendAllText(Path.Combine(logDir, "MyServiceLog.txt"),
-                    $"[{DateTime.Now}] Yangilanish muvaffaqiyatli: {zipPath}\n");
+                    $"[{DateTime.Now}] .bat fayl yaratildi va ishga tushirildi: {batFilePath}\n");
             }
             catch (Exception ex)
             {
@@ -588,6 +750,9 @@ msiexec /x {guid} /qn /l*v ""{logPath}""
                 throw;
             }
         }
+
+
+
 
         private void CopyAllFiles(string sourceDir, string targetDir)
         {
@@ -601,7 +766,7 @@ msiexec /x {guid} /qn /l*v ""{logPath}""
                 if (!Directory.Exists(destDir))
                     Directory.CreateDirectory(destDir);
 
-                File.Copy(sourceFile, destFile, true); // Almashtirish
+                File.Copy(sourceFile, destFile, true); 
             }
         }
 
@@ -611,6 +776,5 @@ msiexec /x {guid} /qn /l*v ""{logPath}""
             Uri fullUri = new Uri(fullPath);
             return Uri.UnescapeDataString(baseUri.MakeRelativeUri(fullUri).ToString().Replace('/', Path.DirectorySeparatorChar));
         }
-
     }
 }

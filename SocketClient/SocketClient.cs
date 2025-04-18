@@ -68,13 +68,14 @@ namespace SocketClient
             {
                 Console.WriteLine("Agentni o‘chirish buyrildi.");
                 SQLiteHelper.WriteLog("SocketClient", "RegisterEvents", "Agentni o‘chirish buyrildi.");
+
                 //var productCode = GetMsiProductCode();
                 //SQLiteHelper.WriteLog("SocketClient", "RegisterEvents", $"{productCode}");
 
-                SendUninstallToService();
                 SQLiteHelper.WriteLog("SocketClient", "RegisterEvents", "Agentni o‘chirish so‘rovi xizmatga yuborildi.");
                 client.EmitAsync("delete_agent", new { status = "success", message = "Agent o‘chirilmoqda..." });
 
+                SendUninstallToService();
             });
         }
 
@@ -480,7 +481,6 @@ namespace SocketClient
                 SQLiteHelper.WriteLog("SocketClient", "SendApplicationForSocketAsync", "Dasturlar ro‘yxatini yuborishda xatolik yuz berdi.");
             }
         }
-
 
     }
 }

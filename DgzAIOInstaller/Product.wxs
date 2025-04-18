@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"><?define DgzAIO_TargetDir=$(var.DgzAIO.TargetDir)?>
 	<Product Id="*" Name="DgzAIO" Language="1033" Version="0.1.1.1" Manufacturer="Dgz LLC" UpgradeCode="5D3D5F89-6BE8-478D-B0E7-7D9D73251846">
-		<Package Description="Test file in a Product" Comments="Simple test" InstallerVersion="200" Compressed="yes"/>
+		<Package Description="Test file in a Product" Comments="Simple test" InstallerVersion="200" Compressed="yes" InstallScope="perMachine"/>
 		<Property Id="MSICACHEORIGINALPACKAGE" Value="1" />
 		<Property Id="MsiLogging" Value="voicewarmup" />
 		<Binary Id="CustomActionDLL" SourceFile="..\CustomAction_uninstall\bin\Release\CustomAction_uninstall.CA.dll" />

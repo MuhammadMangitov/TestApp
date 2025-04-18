@@ -183,7 +183,6 @@ public class AgentUpdater
             }
         }
     }
-
     private void Log(string message)
     {
         string logPath = Path.Combine(localPath, "agent_updater.log");
