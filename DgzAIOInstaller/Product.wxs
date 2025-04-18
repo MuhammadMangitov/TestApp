@@ -1,195 +1,236 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-	<Product Id="27888F5C-09FF-45ED-922F-A2D7EA5D4DA7" Name="DgzAgent" Language="1033" Version="0.0.0.1" Manufacturer="Datagaze LLC" UpgradeCode="94DAABE4-B490-40B7-A902-96BB56631CC4">
-		<Package Description="Test file in a Product" Comments="Simple test" InstallerVersion="200" Compressed="yes" />
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"><?define DgzAIO_TargetDir=$(var.DgzAIO.TargetDir)?>
+	<Product Id="*" Name="DgzAIO" Language="1033" Version="0.1.1.1" Manufacturer="Dgz LLC" UpgradeCode="5D3D5F89-6BE8-478D-B0E7-7D9D73251846">
+		<Package Description="Test file in a Product" Comments="Simple test" InstallerVersion="200" Compressed="yes" InstallScope="perMachine"/>
+		<Property Id="MSICACHEORIGINALPACKAGE" Value="1" />
+		<Property Id="MsiLogging" Value="voicewarmup" />
+		<Binary Id="CustomActionDLL" SourceFile="..\CustomAction_uninstall\bin\Release\CustomAction_uninstall.CA.dll" />
+
+		<CustomAction Id="RunCustomAction" BinaryKey="CustomActionDLL" DllEntry="CustomAction_uninstall" Execute="deferred" Return="check" Impersonate="no" />
+
+		<InstallExecuteSequence>
+			<Custom Action="RunCustomAction" Before="RemoveFiles">REMOVE="ALL"</Custom>
+		</InstallExecuteSequence>
 		<Media Id="1" Cabinet="simple.cab" EmbedCab="yes" />
-		<Feature Id="ProductFeature" Title="My App" Level="1">
-			<ComponentRef Id="DgzAIOServiceComponent" />
-		</Feature>
+		
 		<Directory Id="TARGETDIR" Name="SourceDir">
 			<Directory Id="ProgramFilesFolder">
-			<Directory Id="DGZ" Name="DgzAIO">
-				<Component Id="DgzAIOServiceComponent" Guid="A3BB6943-C53E-4CC7-BB5C-EF98F915AE50">
-					<File Id="DgzAIOServiceExe"
-					  Name="DgzAIOWindowsService.exe"
-					  Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\DgzAIOWindowsService\bin\Release\DgzAIOWindowsService.exe"/>
-					<ServiceInstall Id="DgzAIOServiceInstaller"
-						Name="DgzAIOService"
-						DisplayName="DgzAIO Windows Service"
-						Description="DgzAIO xizmatlari uchun Windows Service"
-						Start="auto"
-						Type="ownProcess"
-						Account="LocalSystem"
-						ErrorControl="normal"/>
-					<ServiceControl Id="StartDgzAIOService"
-						Name="DgzAIOService"
-						Start="install"
-						Stop="both"
-						Remove="uninstall"
-						Wait="yes" />
-				</Component>
-				<Component Id="APPLICATIONMONITOR.DLL" DiskId="1" Guid="159EA094-57E1-4348-A78B-8B665FF37625">
-					<File Id="APPLICATIONMONITOR.DLL" Name="ApplicationMonitor.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\ApplicationMonitor.dll" />
-				</Component>
-				<Component Id="APPLICATIONMONITOR.DLL.CONFIG" DiskId="1" Guid="059E2850-96A1-4CA4-98D8-FD41230278F7">
-					<File Id="APPLICATIONMONITOR.DLL.CONFIG" Name="ApplicationMonitor.dll.config" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\ApplicationMonitor.dll.config" />
-				</Component>
-				<Component Id="COMPUTERINFORMATION.DLL" DiskId="1" Guid="AD54E9C0-EC87-48A8-9542-8ED8A931EE8D">
-					<File Id="COMPUTERINFORMATION.DLL" Name="ComputerInformation.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\ComputerInformation.dll" />
-				</Component>
-				<Component Id="DBHELPER.DLL" DiskId="1" Guid="5D5B1FBF-98B2-424B-8EE8-DA528DF44308">
-					<File Id="DBHELPER.DLL" Name="DBHelper.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\DBHelper.dll" />
-				</Component>
-				<Component Id="DGZAIO.EXE" DiskId="1" Guid="61C9ABEF-8629-4D62-B815-B8CAC61E8D5E">
-					<File Id="DGZAIO.EXE" Name="DgzAIO.exe" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\DgzAIO.exe" />
-				</Component>
-				<Component Id="DGZAIO.EXE.CONFIG" DiskId="1" Guid="1E1E0DA4-D07F-4D2A-91FE-CEEA0BEAB0DF">
-					<File Id="DGZAIO.EXE.CONFIG" Name="DgzAIO.exe.config" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\DgzAIO.exe.config" />
-				</Component>
-				<Component Id="DGZAIO.HTTPSERVICE.DLL" DiskId="1" Guid="9E0FA7D3-BE41-4090-A6A0-4E76DB932DA3">
-					<File Id="DGZAIO.HTTPSERVICE.DLL" Name="DgzAIO.HttpService.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\DgzAIO.HttpService.dll" />
-				</Component>
-				
-				<Component Id="DGZAIOWINDOWSSERVICE.EXE.CONFIG" DiskId="1" Guid="1E167FD7-2B65-403D-9763-B1C2ADFA2658">
-					<File Id="DGZAIOWINDOWSSERVICE.EXE.CONFIG" Name="DgzAIOWindowsService.exe.config" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\DgzAIOWindowsService.exe.config" />
-				</Component>
-				<Component Id="ENTITYFRAMEWORK.DLL" DiskId="1" Guid="46309D4B-E412-4BE7-B45D-5427EB598D0A">
-					<File Id="ENTITYFRAMEWORK.DLL" Name="EntityFramework.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\EntityFramework.dll" />
-				</Component>
-				<Component Id="ENTITYFRAMEWORK.SQLSERVER.DLL" DiskId="1" Guid="E2CE6851-DB50-4C23-BBBC-9AD2EAE87284">
-					<File Id="ENTITYFRAMEWORK.SQLSERVER.DLL" Name="EntityFramework.SqlServer.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\EntityFramework.SqlServer.dll" />
-				</Component>
-				<Component Id="MICROSOFT.BCL.ASYNCINTERFACES.DLL" DiskId="1" Guid="7BC7F1F6-1AF4-4CB3-A361-ADAA4874031D">
-					<File Id="MICROSOFT.BCL.ASYNCINTERFACES.DLL" Name="Microsoft.Bcl.AsyncInterfaces.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Microsoft.Bcl.AsyncInterfaces.dll" />
-				</Component>
-				<Component Id="MICROSOFT.DATA.SQLITE.DLL" DiskId="1" Guid="B6C7B742-1995-4841-B097-99D37E4907E8">
-					<File Id="MICROSOFT.DATA.SQLITE.DLL" Name="Microsoft.Data.Sqlite.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Microsoft.Data.Sqlite.dll" />
-				</Component>
-				<Component Id="MICROSOFT.EXTENSIONS.CONFIGURATION.ABSTRACTIONS.DLL" DiskId="1" Guid="68C5926F-409E-4107-B62A-812E483460B1">
-					<File Id="MICROSOFT.EXTENSIONS.CONFIGURATION.ABSTRACTIONS.DLL" Name="Microsoft.Extensions.Configuration.Abstractions.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Microsoft.Extensions.Configuration.Abstractions.dll" />
-				</Component>
-				<Component Id="MICROSOFT.EXTENSIONS.CONFIGURATION.DLL" DiskId="1" Guid="5DB7177A-98A3-4585-AAF7-8A850D7925C9">
-					<File Id="MICROSOFT.EXTENSIONS.CONFIGURATION.DLL" Name="Microsoft.Extensions.Configuration.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Microsoft.Extensions.Configuration.dll" />
-				</Component>
-				<Component Id="MICROSOFT.EXTENSIONS.CONFIGURATION.ENVIRONMENTVARIABLES.DLL" DiskId="1" Guid="301CD892-7710-4446-82C7-257F1BBE23B0">
-					<File Id="MICROSOFT.EXTENSIONS.CONFIGURATION.ENVIRONMENTVARIABLES.DLL" Name="Microsoft.Extensions.Configuration.EnvironmentVariables.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Microsoft.Extensions.Configuration.EnvironmentVariables.dll" />
-				</Component>
-				<Component Id="MICROSOFT.EXTENSIONS.CONFIGURATION.FILEEXTENSIONS.DLL" DiskId="1" Guid="6CBDF30F-AEFB-4BD1-AB2A-745A71624CBA">
-					<File Id="MICROSOFT.EXTENSIONS.CONFIGURATION.FILEEXTENSIONS.DLL" Name="Microsoft.Extensions.Configuration.FileExtensions.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Microsoft.Extensions.Configuration.FileExtensions.dll" />
-				</Component>
-				<Component Id="MICROSOFT.EXTENSIONS.CONFIGURATION.JSON.DLL" DiskId="1" Guid="3B3078E6-37E9-474E-93D0-DB26A957551B">
-					<File Id="MICROSOFT.EXTENSIONS.CONFIGURATION.JSON.DLL" Name="Microsoft.Extensions.Configuration.Json.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Microsoft.Extensions.Configuration.Json.dll" />
-				</Component>
-				<Component Id="MICROSOFT.EXTENSIONS.FILEPROVIDERS.ABSTRACTIONS.DLL" DiskId="1" Guid="4E550A57-FB72-4AA1-A8BD-3FBE7032808E">
-					<File Id="MICROSOFT.EXTENSIONS.FILEPROVIDERS.ABSTRACTIONS.DLL" Name="Microsoft.Extensions.FileProviders.Abstractions.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Microsoft.Extensions.FileProviders.Abstractions.dll" />
-				</Component>
-				<Component Id="MICROSOFT.EXTENSIONS.FILEPROVIDERS.PHYSICAL.DLL" DiskId="1" Guid="3881441B-1F3D-4DC6-9DAF-951610FA24AB">
-					<File Id="MICROSOFT.EXTENSIONS.FILEPROVIDERS.PHYSICAL.DLL" Name="Microsoft.Extensions.FileProviders.Physical.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Microsoft.Extensions.FileProviders.Physical.dll" />
-				</Component>
-				<Component Id="MICROSOFT.EXTENSIONS.FILESYSTEMGLOBBING.DLL" DiskId="1" Guid="47D31E25-3F13-4FA7-93E7-B8F852EA338C">
-					<File Id="MICROSOFT.EXTENSIONS.FILESYSTEMGLOBBING.DLL" Name="Microsoft.Extensions.FileSystemGlobbing.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Microsoft.Extensions.FileSystemGlobbing.dll" />
-				</Component>
-				<Component Id="MICROSOFT.EXTENSIONS.PRIMITIVES.DLL" DiskId="1" Guid="02B69E3A-3F66-4D53-8527-99F9DDA03991">
-					<File Id="MICROSOFT.EXTENSIONS.PRIMITIVES.DLL" Name="Microsoft.Extensions.Primitives.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Microsoft.Extensions.Primitives.dll" />
-				</Component>
-				<Component Id="NEWTONSOFT.JSON.DLL" DiskId="1" Guid="4ACCE689-B260-4559-8087-1026E480C8C9">
-					<File Id="NEWTONSOFT.JSON.DLL" Name="Newtonsoft.Json.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Newtonsoft.Json.dll" />
-				</Component>
-				<Component Id="SOCKETCLIENT.DLL" DiskId="1" Guid="169E4138-BE28-4AB4-9903-099FE5945A06">
-					<File Id="SOCKETCLIENT.DLL" Name="SocketClient.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\SocketClient.dll" />
-				</Component>
-				<Component Id="SOCKETIO.CORE.DLL" DiskId="1" Guid="5FECA372-541B-4392-B099-1F0D5AD48C2A">
-					<File Id="SOCKETIO.CORE.DLL" Name="SocketIO.Core.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\SocketIO.Core.dll" />
-				</Component>
-				<Component Id="SOCKETIO.SERIALIZER.CORE.DLL" DiskId="1" Guid="534B953E-A10B-4FE9-BF27-B8DD5459EA6C">
-					<File Id="SOCKETIO.SERIALIZER.CORE.DLL" Name="SocketIO.Serializer.Core.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\SocketIO.Serializer.Core.dll" />
-				</Component>
-				<Component Id="SOCKETIO.SERIALIZER.SYSTEMTEXTJSON.DLL" DiskId="1" Guid="D4CE719F-F25E-4B84-9978-57FC03CCB771">
-					<File Id="SOCKETIO.SERIALIZER.SYSTEMTEXTJSON.DLL" Name="SocketIO.Serializer.SystemTextJson.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\SocketIO.Serializer.SystemTextJson.dll" />
-				</Component>
-				<Component Id="SOCKETIOCLIENT.DLL" DiskId="1" Guid="9B83A32C-D6B1-4244-8465-DFE18194BBCB">
-					<File Id="SOCKETIOCLIENT.DLL" Name="SocketIOClient.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\SocketIOClient.dll" />
-				</Component>
-				<Component Id="SQLITEPCLRAW.BATTERIES_V2.DLL" DiskId="1" Guid="5A66B9C0-F3E4-49F3-BA52-A91386676EFF">
-					<File Id="SQLITEPCLRAW.BATTERIES_V2.DLL" Name="SQLitePCLRaw.batteries_v2.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\SQLitePCLRaw.batteries_v2.dll" />
-				</Component>
-				<Component Id="SQLITEPCLRAW.CORE.DLL" DiskId="1" Guid="1BAAEAB0-0593-44F2-AF1F-98D83A60271F">
-					<File Id="SQLITEPCLRAW.CORE.DLL" Name="SQLitePCLRaw.core.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\SQLitePCLRaw.core.dll" />
-				</Component>
-				<Component Id="SQLITEPCLRAW.PROVIDER.DYNAMIC_CDECL.DLL" DiskId="1" Guid="926E8785-9EF7-4AAA-8935-11492B35B46A">
-					<File Id="SQLITEPCLRAW.PROVIDER.DYNAMIC_CDECL.DLL" Name="SQLitePCLRaw.provider.dynamic_cdecl.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\SQLitePCLRaw.provider.dynamic_cdecl.dll" />
-				</Component>
-				<Component Id="SYSTEM.BUFFERS.DLL" DiskId="1" Guid="26A1A00F-0F41-4AA8-821A-26297C7ED04D">
-					<File Id="SYSTEM.BUFFERS.DLL" Name="System.Buffers.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.Buffers.dll" />
-				</Component>
-				<Component Id="SYSTEM.CODEDOM.DLL" DiskId="1" Guid="878B0851-4E59-45FF-9EB5-61C1E9F8B919">
-					<File Id="SYSTEM.CODEDOM.DLL" Name="System.CodeDom.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.CodeDom.dll" />
-				</Component>
-				<Component Id="SYSTEM.DATA.SQLITE.DLL" DiskId="1" Guid="0990277E-C2F8-4810-BBEC-6C67517AA5AA">
-					<File Id="SYSTEM.DATA.SQLITE.DLL" Name="System.Data.SQLite.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.Data.SQLite.dll" />
-				</Component>
-				<Component Id="SYSTEM.DATA.SQLITE.EF6.DLL" DiskId="1" Guid="0A6AE0F2-80BD-4FB7-89F2-F3029C50AF0D">
-					<File Id="SYSTEM.DATA.SQLITE.EF6.DLL" Name="System.Data.SQLite.EF6.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.Data.SQLite.EF6.dll" />
-				</Component>
-				<Component Id="SYSTEM.DATA.SQLITE.LINQ.DLL" DiskId="1" Guid="8AAEF488-0465-4F6E-BCCC-98F02C0A6587">
-					<File Id="SYSTEM.DATA.SQLITE.LINQ.DLL" Name="System.Data.SQLite.Linq.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.Data.SQLite.Linq.dll" />
-				</Component>
-				<Component Id="SYSTEM.IO.PIPELINES.DLL" DiskId="1" Guid="FAF230D2-448F-4A20-B939-DB3283923B93">
-					<File Id="SYSTEM.IO.PIPELINES.DLL" Name="System.IO.Pipelines.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.IO.Pipelines.dll" />
-				</Component>
-				<Component Id="SYSTEM.MEMORY.DLL" DiskId="1" Guid="3C456DFA-E2EC-4E90-901F-B4A22012C585">
-					<File Id="SYSTEM.MEMORY.DLL" Name="System.Memory.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.Memory.dll" />
-				</Component>
-				<Component Id="SYSTEM.NUMERICS.VECTORS.DLL" DiskId="1" Guid="CBBC474A-6172-4B16-9A76-C232FCD5A4F0">
-					<File Id="SYSTEM.NUMERICS.VECTORS.DLL" Name="System.Numerics.Vectors.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.Numerics.Vectors.dll" />
-				</Component>
-				<Component Id="SYSTEM.RUNTIME.COMPILERSERVICES.UNSAFE.DLL" DiskId="1" Guid="A312646A-6CB2-4F9E-B4E0-5E56C74A2386">
-					<File Id="SYSTEM.RUNTIME.COMPILERSERVICES.UNSAFE.DLL" Name="System.Runtime.CompilerServices.Unsafe.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.Runtime.CompilerServices.Unsafe.dll" />
-				</Component>
-				<Component Id="SYSTEM.TEXT.ENCODINGS.WEB.DLL" DiskId="1" Guid="6100D042-DC65-4305-8874-BDDA2DE12587">
-					<File Id="SYSTEM.TEXT.ENCODINGS.WEB.DLL" Name="System.Text.Encodings.Web.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.Text.Encodings.Web.dll" />
-				</Component>
-				<Component Id="SYSTEM.TEXT.JSON.DLL" DiskId="1" Guid="3F0B67EC-A72E-4A06-B322-109154D7DF69">
-					<File Id="SYSTEM.TEXT.JSON.DLL" Name="System.Text.Json.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.Text.Json.dll" />
-				</Component>
-				<Component Id="SYSTEM.THREADING.TASKS.EXTENSIONS.DLL" DiskId="1" Guid="613B3A0B-F8FF-46AF-BBD0-983A8890C5E7">
-					<File Id="SYSTEM.THREADING.TASKS.EXTENSIONS.DLL" Name="System.Threading.Tasks.Extensions.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.Threading.Tasks.Extensions.dll" />
-				</Component>
-				<Component Id="SYSTEM.VALUETUPLE.DLL" DiskId="1" Guid="0A7F79FA-363A-41DD-9160-EC92EE189C67">
-					<File Id="SYSTEM.VALUETUPLE.DLL" Name="System.ValueTuple.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.ValueTuple.dll" />
-				</Component>
-				<Directory Id="X64" Name="x64">
-					<Component Id="SQLITE.INTEROP.DLL" DiskId="1" Guid="0C14C948-3CAE-45FB-82E9-3F57D80F87B2">
-						<File Id="SQLITE.INTEROP.DLL" Name="SQLite.Interop.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\x64\SQLite.Interop.dll" />
+				<Directory Id="INSTALLFOLDER" Name="DgzAIO">
+
+					<Component Id="CleanupComponent" Guid="{88432D84-0665-47BE-96D5-627D69889D32}">
+						<CreateFolder Directory="INSTALLFOLDER" />
+						<RemoveFile Id="RemoveAllFiles" Name="*.*" On="uninstall" Directory="INSTALLFOLDER" />
+						<RemoveFolder Id="RemoveInstallFolder" On="uninstall" Directory="INSTALLFOLDER" />
 					</Component>
-				</Directory>
-				<Directory Id="X86" Name="x86">
-					<Component Id="SQLITE.INTEROP.DLL_1" DiskId="1" Guid="A0FED5AB-3481-4AB2-A2D1-9C9C47769538">
-						<File Id="SQLITE.INTEROP.DLL_1" Name="SQLite.Interop.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\x86\SQLite.Interop.dll" />
+					
+					<Component Id="RegistryComponent" Guid="{74178BB3-C00B-4D62-BAA7-1D27F4C5DCC7}">
+						<RegistryKey Root="HKLM" Key="SOFTWARE\Datagaze\DLP" Action="createAndRemoveOnUninstall">
+							<RegistryValue Name="guid" Type="string" Value="[ProductCode]" KeyPath="yes" />
+						</RegistryKey>
 					</Component>
+
+					<Component Id="RegistryUninstall" Guid="{A1B2C3D4-E5F6-7890-ABCD-1234567890EF}">
+						<RegistryKey Root="HKLM" Key="SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\[ProductCode]" 
+									 Action="createAndRemoveOnUninstall">
+							<RegistryValue Name="DisplayName" Type="string" Value="DgzAIO" />
+							<RegistryValue Name="Publisher" Type="string" Value="Dgz LLC" />
+							<RegistryValue Name="DisplayVersion" Type="string" Value="0.1.1.1" />
+							<RegistryValue Name="InstallSource" Type="string" Value="[SourceDir]" />
+							<RegistryValue Name="InstallLocation" Type="string" Value="[INSTALLFOLDER]" />
+							<RegistryValue Name="UninstallString" Type="string" Value="MsiExec.exe /x[ProductCode]" />
+							<RegistryValue Name="QuietUninstallString" Type="string" Value="MsiExec.exe /x[ProductCode] /qn" />
+							<RegistryValue Name="NoModify" Type="integer" Value="1" />
+							<RegistryValue Name="NoRepair" Type="integer" Value="1" />
+							<RegistryValue Name="EstimatedSize" Type="integer" Value="10240" />
+						</RegistryKey>
+					</Component>
+					
+					<Component Id="DgzAIOServiceComponent" Guid="A3BB6943-C53E-4CC7-BB5C-EF98F915AE50">
+						<File Id="DgzAIOServiceExe" Name="DgzAIOWindowsService.exe" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\DgzAIOWindowsService\bin\Release\DgzAIOWindowsService.exe" />
+						<ServiceInstall Id="DgzAIOServiceInstaller" Name="DgzAIOService" DisplayName="DgzAIO Windows Service" Description="DgzAIO xizmatlari uchun Windows Service" Start="auto" Type="ownProcess" Account="LocalSystem" ErrorControl="normal" />
+						<ServiceControl Id="StartDgzAIOService" Name="DgzAIOService" Start="install" Stop="both" Remove="uninstall" Wait="yes" />
+					</Component>
+
+					<Component Id="APPLICATIONMONITOR.DLL" DiskId="1" Guid="D88BFEEE-73C0-40A9-9633-F051B9808FF8">
+						<File Id="APPLICATIONMONITOR.DLL" Name="ApplicationMonitor.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\ApplicationMonitor.dll" />
+					</Component>
+					<Component Id="COMPUTERINFORMATION.DLL" DiskId="1" Guid="4BBECD0F-C4AF-436D-AF27-A2D72A6E14BA">
+						<File Id="COMPUTERINFORMATION.DLL" Name="ComputerInformation.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\ComputerInformation.dll" />
+					</Component>
+					<Component Id="CUSTOMACTION_UNINSTALL.DLL" DiskId="1" Guid="49B8CD81-0F3A-4CEC-A3F3-0CDCDB2A2167">
+						<File Id="CUSTOMACTION_UNINSTALL.DLL" Name="CustomAction_uninstall.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\CustomAction_uninstall.dll" />
+					</Component>
+					<Component Id="DBHELPER.DLL" DiskId="1" Guid="00534E35-833A-4C47-AEB1-839EA1370728">
+						<File Id="DBHELPER.DLL" Name="DBHelper.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\DBHelper.dll" />
+					</Component>
+					<Component Id="DGZAIO.EXE" DiskId="1" Guid="AE610F66-B728-43BB-9E4D-9DF556EACCD6">
+						<File Id="DGZAIO.EXE" Name="DgzAIO.exe" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\DgzAIO.exe" />
+					</Component>
+					<Component Id="DGZAIO.EXE.CONFIG" DiskId="1" Guid="06F9E220-3239-4D62-91F3-53C0983941EB">
+						<File Id="DGZAIO.EXE.CONFIG" Name="DgzAIO.exe.config" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\DgzAIO.exe.config" />
+					</Component>
+					<Component Id="DGZAIO.HTTPSERVICE.DLL" DiskId="1" Guid="4DA48C19-C32E-4CB1-BC4C-E58AE9A7EB38">
+						<File Id="DGZAIO.HTTPSERVICE.DLL" Name="DgzAIO.HttpService.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\DgzAIO.HttpService.dll" />
+					</Component>
+					<Component Id="DGZAIOWINDOWSSERVICE.EXE.CONFIG" DiskId="1" Guid="CCC7D07C-3171-45C0-B802-2E11B41BDBA2">
+						<File Id="DGZAIOWINDOWSSERVICE.EXE.CONFIG" Name="DgzAIOWindowsService.exe.config" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\DgzAIOWindowsService.exe.config" />
+					</Component>
+					<Component Id="ENTITYFRAMEWORK.DLL" DiskId="1" Guid="724C741C-E2B4-4311-A66F-D4721EAE25D0">
+						<File Id="ENTITYFRAMEWORK.DLL" Name="EntityFramework.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\EntityFramework.dll" />
+					</Component>
+					<Component Id="ENTITYFRAMEWORK.SQLSERVER.DLL" DiskId="1" Guid="25954E1C-0957-462C-8303-9100DB0C925E">
+						<File Id="ENTITYFRAMEWORK.SQLSERVER.DLL" Name="EntityFramework.SqlServer.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\EntityFramework.SqlServer.dll" />
+					</Component>
+					<Component Id="MICROSOFT.BCL.ASYNCINTERFACES.DLL" DiskId="1" Guid="9288E1E1-A956-45EB-B543-3FA505B83EC5">
+						<File Id="MICROSOFT.BCL.ASYNCINTERFACES.DLL" Name="Microsoft.Bcl.AsyncInterfaces.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Microsoft.Bcl.AsyncInterfaces.dll" />
+					</Component>
+					<Component Id="MICROSOFT.DATA.SQLITE.DLL" DiskId="1" Guid="3C92FABA-F5C2-47B6-A966-7AF8278B11A6">
+						<File Id="MICROSOFT.DATA.SQLITE.DLL" Name="Microsoft.Data.Sqlite.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Microsoft.Data.Sqlite.dll" />
+					</Component>
+					<Component Id="MICROSOFT.DEPLOYMENT.WINDOWSINSTALLER.DLL" DiskId="1" Guid="30C9A48B-459B-4130-B79E-4C8623E68622">
+						<File Id="MICROSOFT.DEPLOYMENT.WINDOWSINSTALLER.DLL" Name="Microsoft.Deployment.WindowsInstaller.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Microsoft.Deployment.WindowsInstaller.dll" />
+					</Component>
+					<Component Id="MICROSOFT.EXTENSIONS.CONFIGURATION.ABSTRACTIONS.DLL" DiskId="1" Guid="BAAA1476-7A81-41DB-9270-35413EA880FE">
+						<File Id="MICROSOFT.EXTENSIONS.CONFIGURATION.ABSTRACTIONS.DLL" Name="Microsoft.Extensions.Configuration.Abstractions.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Microsoft.Extensions.Configuration.Abstractions.dll" />
+					</Component>
+					<Component Id="MICROSOFT.EXTENSIONS.CONFIGURATION.DLL" DiskId="1" Guid="68FF4D03-F653-4F88-B41A-C3630CAF2CFE">
+						<File Id="MICROSOFT.EXTENSIONS.CONFIGURATION.DLL" Name="Microsoft.Extensions.Configuration.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Microsoft.Extensions.Configuration.dll" />
+					</Component>
+					<Component Id="MICROSOFT.EXTENSIONS.CONFIGURATION.ENVIRONMENTVARIABLES.DLL" DiskId="1" Guid="24BAF8C8-4FEA-4B91-9F35-D496D65BC4C9">
+						<File Id="MICROSOFT.EXTENSIONS.CONFIGURATION.ENVIRONMENTVARIABLES.DLL" Name="Microsoft.Extensions.Configuration.EnvironmentVariables.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Microsoft.Extensions.Configuration.EnvironmentVariables.dll" />
+					</Component>
+					<Component Id="MICROSOFT.EXTENSIONS.CONFIGURATION.FILEEXTENSIONS.DLL" DiskId="1" Guid="825944F3-96EF-4EF5-944F-64B64A141F7B">
+						<File Id="MICROSOFT.EXTENSIONS.CONFIGURATION.FILEEXTENSIONS.DLL" Name="Microsoft.Extensions.Configuration.FileExtensions.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Microsoft.Extensions.Configuration.FileExtensions.dll" />
+					</Component>
+					<Component Id="MICROSOFT.EXTENSIONS.FILEPROVIDERS.ABSTRACTIONS.DLL" DiskId="1" Guid="DB351118-DBC6-465F-8938-5FA55F8E1002">
+						<File Id="MICROSOFT.EXTENSIONS.FILEPROVIDERS.ABSTRACTIONS.DLL" Name="Microsoft.Extensions.FileProviders.Abstractions.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Microsoft.Extensions.FileProviders.Abstractions.dll" />
+					</Component>
+					<Component Id="MICROSOFT.EXTENSIONS.FILEPROVIDERS.PHYSICAL.DLL" DiskId="1" Guid="45EA33DA-27D8-4660-A1A4-533920FE80E7">
+						<File Id="MICROSOFT.EXTENSIONS.FILEPROVIDERS.PHYSICAL.DLL" Name="Microsoft.Extensions.FileProviders.Physical.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Microsoft.Extensions.FileProviders.Physical.dll" />
+					</Component>
+					<Component Id="MICROSOFT.EXTENSIONS.FILESYSTEMGLOBBING.DLL" DiskId="1" Guid="83DA843C-8521-4CAE-9601-33F77A75D274">
+						<File Id="MICROSOFT.EXTENSIONS.FILESYSTEMGLOBBING.DLL" Name="Microsoft.Extensions.FileSystemGlobbing.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Microsoft.Extensions.FileSystemGlobbing.dll" />
+					</Component>
+					<Component Id="MICROSOFT.EXTENSIONS.PRIMITIVES.DLL" DiskId="1" Guid="94D9428D-5D29-4E38-8FA9-DD2B3CE0EF61">
+						<File Id="MICROSOFT.EXTENSIONS.PRIMITIVES.DLL" Name="Microsoft.Extensions.Primitives.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Microsoft.Extensions.Primitives.dll" />
+					</Component>
+					<Component Id="NEWTONSOFT.JSON.DLL" DiskId="1" Guid="F98DF5A5-F215-49DB-816B-75FE5DBFAAF0">
+						<File Id="NEWTONSOFT.JSON.DLL" Name="Newtonsoft.Json.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\Newtonsoft.Json.dll" />
+					</Component>
+					<Component Id="SOCKETCLIENT.DLL" DiskId="1" Guid="A244337E-4D63-4CCD-8586-9F11476E8DF4">
+						<File Id="SOCKETCLIENT.DLL" Name="SocketClient.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\SocketClient.dll" />
+					</Component>
+					<Component Id="SOCKETIO.CORE.DLL" DiskId="1" Guid="0754191D-DD2D-46A6-B135-FDC28D2476A5">
+						<File Id="SOCKETIO.CORE.DLL" Name="SocketIO.Core.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\SocketIO.Core.dll" />
+					</Component>
+					<Component Id="SOCKETIO.SERIALIZER.CORE.DLL" DiskId="1" Guid="D5591FC8-BED3-4774-8011-3504C351AFB3">
+						<File Id="SOCKETIO.SERIALIZER.CORE.DLL" Name="SocketIO.Serializer.Core.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\SocketIO.Serializer.Core.dll" />
+					</Component>
+					<Component Id="SOCKETIO.SERIALIZER.SYSTEMTEXTJSON.DLL" DiskId="1" Guid="01EC3080-C13F-463D-9017-7AC1D6D707AD">
+						<File Id="SOCKETIO.SERIALIZER.SYSTEMTEXTJSON.DLL" Name="SocketIO.Serializer.SystemTextJson.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\SocketIO.Serializer.SystemTextJson.dll" />
+					</Component>
+					<Component Id="SOCKETIOCLIENT.DLL" DiskId="1" Guid="B45CE9D5-AAE9-4B76-A40C-DF10C745C854">
+						<File Id="SOCKETIOCLIENT.DLL" Name="SocketIOClient.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\SocketIOClient.dll" />
+					</Component>
+					<Component Id="SQLITEPCLRAW.BATTERIES_V2.DLL" DiskId="1" Guid="FDA0B5A3-31C5-4178-89A3-024C25BD399D">
+						<File Id="SQLITEPCLRAW.BATTERIES_V2.DLL" Name="SQLitePCLRaw.batteries_v2.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\SQLitePCLRaw.batteries_v2.dll" />
+					</Component>
+					<Component Id="SQLITEPCLRAW.CORE.DLL" DiskId="1" Guid="E7E30054-DDDB-46D7-8BAF-EB4B39BEB258">
+						<File Id="SQLITEPCLRAW.CORE.DLL" Name="SQLitePCLRaw.core.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\SQLitePCLRaw.core.dll" />
+					</Component>
+					<Component Id="SQLITEPCLRAW.PROVIDER.DYNAMIC_CDECL.DLL" DiskId="1" Guid="0CE279C9-6D0A-4216-918B-668562824706">
+						<File Id="SQLITEPCLRAW.PROVIDER.DYNAMIC_CDECL.DLL" Name="SQLitePCLRaw.provider.dynamic_cdecl.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\SQLitePCLRaw.provider.dynamic_cdecl.dll" />
+					</Component>
+					<Component Id="SYSTEM.BUFFERS.DLL" DiskId="1" Guid="47A5944F-BFF4-4F03-A808-CC883EC1F764">
+						<File Id="SYSTEM.BUFFERS.DLL" Name="System.Buffers.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.Buffers.dll" />
+					</Component>
+					<Component Id="SYSTEM.CODEDOM.DLL" DiskId="1" Guid="24C3FFC5-39DD-403C-8200-6A0FAF46540D">
+						<File Id="SYSTEM.CODEDOM.DLL" Name="System.CodeDom.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.CodeDom.dll" />
+					</Component>
+					<Component Id="SYSTEM.DATA.SQLITE.DLL" DiskId="1" Guid="DCD2F8FB-15E2-47C6-8472-0A2991E2F1BC">
+						<File Id="SYSTEM.DATA.SQLITE.DLL" Name="System.Data.SQLite.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.Data.SQLite.dll" />
+					</Component>
+					<Component Id="SYSTEM.DATA.SQLITE.EF6.DLL" DiskId="1" Guid="B2357419-CCEA-4C4D-B451-C61AFBDA653E">
+						<File Id="SYSTEM.DATA.SQLITE.EF6.DLL" Name="System.Data.SQLite.EF6.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.Data.SQLite.EF6.dll" />
+					</Component>
+					<Component Id="SYSTEM.DATA.SQLITE.LINQ.DLL" DiskId="1" Guid="BAA5A63C-7CC4-49D1-B18A-7E140E72D47A">
+						<File Id="SYSTEM.DATA.SQLITE.LINQ.DLL" Name="System.Data.SQLite.Linq.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.Data.SQLite.Linq.dll" />
+					</Component>
+					<Component Id="SYSTEM.IO.PIPELINES.DLL" DiskId="1" Guid="E06430FD-3C86-4CAB-9181-25CBFCAE5DB4">
+						<File Id="SYSTEM.IO.PIPELINES.DLL" Name="System.IO.Pipelines.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.IO.Pipelines.dll" />
+					</Component>
+					<Component Id="SYSTEM.MEMORY.DLL" DiskId="1" Guid="8A27B00E-5693-41F4-920B-AD6F150ED926">
+						<File Id="SYSTEM.MEMORY.DLL" Name="System.Memory.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.Memory.dll" />
+					</Component>
+					<Component Id="SYSTEM.NUMERICS.VECTORS.DLL" DiskId="1" Guid="8212511F-C84A-450C-9360-5366F5FDD276">
+						<File Id="SYSTEM.NUMERICS.VECTORS.DLL" Name="System.Numerics.Vectors.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.Numerics.Vectors.dll" />
+					</Component>
+					<Component Id="SYSTEM.RUNTIME.COMPILERSERVICES.UNSAFE.DLL" DiskId="1" Guid="690DF78D-7BBC-41F3-AABA-88B12AB45A90">
+						<File Id="SYSTEM.RUNTIME.COMPILERSERVICES.UNSAFE.DLL" Name="System.Runtime.CompilerServices.Unsafe.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.Runtime.CompilerServices.Unsafe.dll" />
+					</Component>
+					<Component Id="SYSTEM.SERVICEMODEL.DUPLEX.DLL" DiskId="1" Guid="8CB44CEC-32D3-403D-B271-E22090E6414E">
+						<File Id="SYSTEM.SERVICEMODEL.DUPLEX.DLL" Name="System.ServiceModel.Duplex.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.ServiceModel.Duplex.dll" />
+					</Component>
+					<Component Id="SYSTEM.SERVICEMODEL.PRIMITIVES.DLL" DiskId="1" Guid="541D396B-BAFE-4A11-9289-9BBCA2F4E7F3">
+						<File Id="SYSTEM.SERVICEMODEL.PRIMITIVES.DLL" Name="System.ServiceModel.Primitives.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.ServiceModel.Primitives.dll" />
+					</Component>
+					<Component Id="SYSTEM.SERVICEMODEL.SECURITY.DLL" DiskId="1" Guid="4158AED5-EF93-4CF3-8E87-AACD4D88AD78">
+						<File Id="SYSTEM.SERVICEMODEL.SECURITY.DLL" Name="System.ServiceModel.Security.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.ServiceModel.Security.dll" />
+					</Component>
+					<Component Id="SYSTEM.TEXT.ENCODINGS.WEB.DLL" DiskId="1" Guid="1DCDC215-4C4C-42C8-9428-381E4FD2095F">
+						<File Id="SYSTEM.TEXT.ENCODINGS.WEB.DLL" Name="System.Text.Encodings.Web.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.Text.Encodings.Web.dll" />
+					</Component>
+					<Component Id="SYSTEM.TEXT.JSON.DLL" DiskId="1" Guid="D5C3C01B-401E-4A1E-BC7E-742751B3D6B6">
+						<File Id="SYSTEM.TEXT.JSON.DLL" Name="System.Text.Json.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.Text.Json.dll" />
+					</Component>
+					<Component Id="SYSTEM.THREADING.TASKS.EXTENSIONS.DLL" DiskId="1" Guid="742F3784-15C0-4F96-8D66-81537579F8C9">
+						<File Id="SYSTEM.THREADING.TASKS.EXTENSIONS.DLL" Name="System.Threading.Tasks.Extensions.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.Threading.Tasks.Extensions.dll" />
+					</Component>
+					<Component Id="SYSTEM.VALUETUPLE.DLL" DiskId="1" Guid="29A47EBD-989C-4F88-9EAA-F7BA30FD8240">
+						<File Id="SYSTEM.VALUETUPLE.DLL" Name="System.ValueTuple.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\System.ValueTuple.dll" />
+					</Component>
+					<Component Id="UPDATEMAKER.EXE" DiskId="1" Guid="56628C27-CF9B-4344-BB18-0D225560DE65">
+						<File Id="UPDATEMAKER.EXE" Name="UpdateMaker.exe" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\UpdateMaker.exe" />
+					</Component>
+					<Component Id="UPDATEMAKER.EXE.CONFIG" DiskId="1" Guid="94D6FE14-8F12-48A0-A78C-2D6F9D46DA69">
+						<File Id="UPDATEMAKER.EXE.CONFIG" Name="UpdateMaker.exe.config" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\UpdateMaker.exe.config" />
+					</Component>
+					<Directory Id="X64" Name="x64">
+						<Component Id="SQLITE.INTEROP.DLL" DiskId="1" Guid="93440F59-0D3D-4544-B77B-263A5B9ABA60">
+							<File Id="SQLITE.INTEROP.DLL" Name="SQLite.Interop.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\x64\SQLite.Interop.dll" />
+						</Component>
+					</Directory>
+					<Directory Id="X86" Name="x86">
+						<Component Id="SQLITE.INTEROP.DLL_1" DiskId="1" Guid="C14B0160-F06F-4080-9D75-BFD60C9F4CEB">
+							<File Id="SQLITE.INTEROP.DLL_1" Name="SQLite.Interop.dll" Source="C:\Users\Muhammad\Desktop\c#_modul\github\SystemMonitorInstaller\TestApp\bin\Release\x86\SQLite.Interop.dll" />
+						</Component>
+					</Directory>
 				</Directory>
+				<Directory Id="ILLink" Name="ILLink" />
 			</Directory>
 		</Directory>
-		</Directory>
 		<Feature Id="DefaultFeature" Title="Main Feature" Level="1">
+			<ComponentRef Id="DgzAIOServiceComponent" />
+			<ComponentRef Id="RegistryComponent" />
+			<ComponentRef Id="RegistryUninstall" />
 			<ComponentRef Id="APPLICATIONMONITOR.DLL" />
-			<ComponentRef Id="APPLICATIONMONITOR.DLL.CONFIG" />
 			<ComponentRef Id="COMPUTERINFORMATION.DLL" />
+			<ComponentRef Id="CleanupComponent" />
+			<ComponentRef Id="CUSTOMACTION_UNINSTALL.DLL" />
 			<ComponentRef Id="DBHELPER.DLL" />
 			<ComponentRef Id="DGZAIO.EXE" />
 			<ComponentRef Id="DGZAIO.EXE.CONFIG" />
 			<ComponentRef Id="DGZAIO.HTTPSERVICE.DLL" />
-			
 			<ComponentRef Id="DGZAIOWINDOWSSERVICE.EXE.CONFIG" />
 			<ComponentRef Id="ENTITYFRAMEWORK.DLL" />
 			<ComponentRef Id="ENTITYFRAMEWORK.SQLSERVER.DLL" />
 			<ComponentRef Id="MICROSOFT.BCL.ASYNCINTERFACES.DLL" />
 			<ComponentRef Id="MICROSOFT.DATA.SQLITE.DLL" />
+			<ComponentRef Id="MICROSOFT.DEPLOYMENT.WINDOWSINSTALLER.DLL" />
 			<ComponentRef Id="MICROSOFT.EXTENSIONS.CONFIGURATION.ABSTRACTIONS.DLL" />
 			<ComponentRef Id="MICROSOFT.EXTENSIONS.CONFIGURATION.DLL" />
 			<ComponentRef Id="MICROSOFT.EXTENSIONS.CONFIGURATION.ENVIRONMENTVARIABLES.DLL" />
 			<ComponentRef Id="MICROSOFT.EXTENSIONS.CONFIGURATION.FILEEXTENSIONS.DLL" />
-			<ComponentRef Id="MICROSOFT.EXTENSIONS.CONFIGURATION.JSON.DLL" />
 			<ComponentRef Id="MICROSOFT.EXTENSIONS.FILEPROVIDERS.ABSTRACTIONS.DLL" />
 			<ComponentRef Id="MICROSOFT.EXTENSIONS.FILEPROVIDERS.PHYSICAL.DLL" />
 			<ComponentRef Id="MICROSOFT.EXTENSIONS.FILESYSTEMGLOBBING.DLL" />
@@ -212,10 +253,15 @@
 			<ComponentRef Id="SYSTEM.MEMORY.DLL" />
 			<ComponentRef Id="SYSTEM.NUMERICS.VECTORS.DLL" />
 			<ComponentRef Id="SYSTEM.RUNTIME.COMPILERSERVICES.UNSAFE.DLL" />
+			<ComponentRef Id="SYSTEM.SERVICEMODEL.DUPLEX.DLL" />
+			<ComponentRef Id="SYSTEM.SERVICEMODEL.PRIMITIVES.DLL" />
+			<ComponentRef Id="SYSTEM.SERVICEMODEL.SECURITY.DLL" />
 			<ComponentRef Id="SYSTEM.TEXT.ENCODINGS.WEB.DLL" />
 			<ComponentRef Id="SYSTEM.TEXT.JSON.DLL" />
 			<ComponentRef Id="SYSTEM.THREADING.TASKS.EXTENSIONS.DLL" />
 			<ComponentRef Id="SYSTEM.VALUETUPLE.DLL" />
+			<ComponentRef Id="UPDATEMAKER.EXE" />
+			<ComponentRef Id="UPDATEMAKER.EXE.CONFIG" />
 			<ComponentRef Id="SQLITE.INTEROP.DLL" />
 			<ComponentRef Id="SQLITE.INTEROP.DLL_1" />
 		</Feature>

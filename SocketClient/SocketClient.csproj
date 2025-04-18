@@ -78,6 +78,7 @@
     <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=6.0.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\TestApp\packages\System.Runtime.CompilerServices.Unsafe.6.1.2\lib\net462\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
     </Reference>
+    <Reference Include="System.ServiceModel" />
     <Reference Include="System.Text.Encodings.Web, Version=9.0.0.3, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\TestApp\packages\System.Text.Encodings.Web.9.0.3\lib\net462\System.Text.Encodings.Web.dll</HintPath>
     </Reference>
@@ -95,6 +96,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ConfigurationManagerSocket.cs" />
     <Compile Include="Models\CommandData.cs" />
     <Compile Include="SocketClient.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -104,6 +106,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\ApplicationMonitor\ApplicationMonitor.csproj">
+      <Project>{c1d98e0b-3f21-41e2-bc6d-98e4865fa2c1}</Project>
+      <Name>ApplicationMonitor</Name>
+    </ProjectReference>
     <ProjectReference Include="..\DBHelper\DBHelper.csproj">
       <Project>{9B48B5CF-67FA-419D-84BF-17E5DE36F4DB}</Project>
       <Name>DBHelper</Name>
@@ -111,6 +117,10 @@
     <ProjectReference Include="..\DgzAIO.HttpService\ApiClient.csproj">
       <Project>{0e4ec176-5aa5-46b9-8e69-957a650ea606}</Project>
       <Name>ApiClient</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\DgzAIOWindowsService\DgzAIOWindowsService.csproj">
+      <Project>{95582528-BF66-4CF4-9A9A-154B0E45BFA1}</Project>
+      <Name>DgzAIOWindowsService</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

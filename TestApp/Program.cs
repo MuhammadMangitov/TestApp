@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO.Pipes;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,10 +15,12 @@ namespace DgzAIO
         {
             try
             {
+                AgentUpdater agentUpdater = new AgentUpdater();
+                agentUpdater.CheckAndUpdate().Wait();
 
                 Modules.Start();
-
                 Console.WriteLine("Barcha modullar ishga tushdi!");
+
             }
             catch (Exception ex)
             {
@@ -25,6 +29,7 @@ namespace DgzAIO
 
             Console.ReadLine();
         }
+        
     }
 
 }
