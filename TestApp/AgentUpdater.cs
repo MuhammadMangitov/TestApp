@@ -23,7 +23,9 @@ public class AgentUpdater
     {
         string exePath = Process.GetCurrentProcess().MainModule.FileName;
         currentVersion = FileVersionInfo.GetVersionInfo(exePath).FileVersion;
+
         localPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Agent");
+
         if (!Directory.Exists(localPath))
         {
             try
@@ -37,26 +39,28 @@ public class AgentUpdater
                 throw;
             }
         }
-        client.DefaultRequestHeaders.Add("Authorization", TOKEN_FOR_UPDATE);
+        client.DefaultRequestHeaders.Add("authorization", TOKEN_FOR_UPDATE);
     }
 
     [ServiceContract]
     interface IAgentService
     {
         [OperationContract]
-        void UpdateAgent(string zipPath);
+        void UpdateAgent(string zipPath, string localPath);
     }
 
     public async Task CheckAndUpdate()
     {
         try
         {
-            Console.WriteLine($" aaaa{ localPath}");
+            Console.WriteLine($"{ localPath}");
 
             Console.WriteLine("Yangilanish tekshirilmoqda...");
             Log("Yangilanish tekshirilmoqda...");
+
             string jsonResponse = await client.GetStringAsync(SERVER_URL);
             Log("Server javobi: " + jsonResponse);
+
             Console.WriteLine("Server javobi: " + jsonResponse);
             var updateInfo = JsonSerializer.Deserialize<UpdateInfo>(jsonResponse);
             if (updateInfo == null)
@@ -147,20 +151,20 @@ public class AgentUpdater
 
             try
             {
-                channel.UpdateAgent(zipPath);
+                channel.UpdateAgent(zipPath, localPath);
                 success = true;
             }
             catch (EndpointNotFoundException)
             {
-                Log("❌ Xizmat topilmadi, ishga tushirilganligini tekshiring.");
+                Log("Xizmat topilmadi, ishga tushirilganligini tekshiring.");
             }
             catch (CommunicationException ex)
             {
-                Log($"❌ WCF aloqa xatosi: {ex.Message}");
+                Log($"WCF aloqa xatosi: {ex.Message}");
             }
             catch (Exception ex)
             {
-                Log($"❌ Xatolik: {ex.Message}");
+                Log($"Xatolik: {ex.Message}");
             }
             finally
             {
@@ -178,7 +182,7 @@ public class AgentUpdater
 
                 if (success)
                 {
-                    Log("✅ Yangilanish xizmatga muvaffaqiyatli yuborildi.");
+                    Log("Yangilanish xizmatga muvaffaqiyatli yuborildi.");
                 }
             }
         }
@@ -192,7 +196,7 @@ public class AgentUpdater
         }
         catch
         {
-            Console.WriteLine(message); // Agar log fayliga yozish muvaffaqiyatsiz bo'lsa, konsolga chiqarish
+            Console.WriteLine(message); 
         }
     }
 }

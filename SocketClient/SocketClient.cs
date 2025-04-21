@@ -94,8 +94,6 @@ namespace SocketClient
             try
             {   
                 string jwtToken = await SQLiteHelper.GetJwtToken();
-                
-                Console.WriteLine($"JWT Token socket uchun : {jwtToken}"); 
 
                 if (string.IsNullOrEmpty(jwtToken))
                 {
@@ -168,6 +166,7 @@ namespace SocketClient
             }
         }
 
+
         [ServiceContract]
         interface IAgentService
         {
@@ -196,18 +195,18 @@ namespace SocketClient
                 }
                 catch (EndpointNotFoundException)
                 {
-                    Console.WriteLine("❌ Xizmat topilmadi, iltimos xizmat ishga tushirilganligini tekshiring.");
-                    Log("❌ Xizmat topilmadi, iltimos xizmat ishga tushirilganligini tekshiring.");
+                    Console.WriteLine("Xizmat topilmadi, iltimos xizmat ishga tushirilganligini tekshiring.");
+                    Log("Xizmat topilmadi, iltimos xizmat ishga tushirilganligini tekshiring.");
                 }
                 catch (CommunicationException ex)
                 {
-                    Console.WriteLine($"❌ WCF aloqa xatosi: {ex.Message}");
-                    Log($"❌ WCF aloqa xatosi: {ex.Message}");
+                    Console.WriteLine($"WCF aloqa xatosi: {ex.Message}");
+                    Log($"WCF aloqa xatosi: {ex.Message}");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Xatolik: {ex.Message}");
-                    Log($"❌ Xatolik: {ex.Message}");
+                    Console.WriteLine($"Xatolik: {ex.Message}");
+                    Log($"Xatolik: {ex.Message}");
                 }
                 finally
                 {
@@ -224,73 +223,23 @@ namespace SocketClient
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"❌ Channelni yopishda xatolik: {ex.Message}");
-                        Log($"❌ Channelni yopishda xatolik: {ex.Message}");
+                        Console.WriteLine($"Channelni yopishda xatolik: {ex.Message}");
+                        Log($"Channelni yopishda xatolik: {ex.Message}");
                     }
 
                     if (success)
                     {
-                        Console.WriteLine("✅ Agentni o‘chirish so‘rovi xizmatga muvaffaqiyatli yuborildi.");
-                        Log("✅ Agentni o‘chirish so‘rovi xizmatga muvaffaqiyatli yuborildi.");
+                        Console.WriteLine("Agentni o‘chirish so‘rovi xizmatga muvaffaqiyatli yuborildi.");
+                        Log("Agentni o‘chirish so‘rovi xizmatga muvaffaqiyatli yuborildi.");
                     }
                 }
             }
         }
         private void Log(string message)
         {
-            // Yaxshi amaliyot - log faylga yozish
-            File.AppendAllText(@"C:\LogDgz\AgentUninstallLog.txt", $"{DateTime.Now} - {message}\n");
+            File.AppendAllText(@"C:\Logs\SocketLog.txt", $"{DateTime.Now} - {message}\n");
         }
        
-        public static string GetMsiProductCode()
-        {
-            string uninstallKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall";
-            string displayName = GetInstalledAgentName();
-
-            string productCode = FindProductCode(Registry.LocalMachine, uninstallKey, displayName);
-            if (!string.IsNullOrEmpty(productCode)) return productCode;
-
-            string wow64Key = @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall";
-            return FindProductCode(Registry.LocalMachine, wow64Key, displayName);
-        }
-        private static string GetInstalledAgentName()
-        {
-            string processName = Process.GetCurrentProcess().ProcessName;
-            SQLiteHelper.WriteLog("SocketIo", "GetInstallAgentName", $"Process name: {processName}");
-            string agentName = processName.Split('.').FirstOrDefault();
-            SQLiteHelper.WriteLog("SocketIo", "GetInstallAgentName", $"Agent name: {agentName}");
-
-            return agentName;
-        }
-        private static string FindProductCode(RegistryKey rootKey, string subKeyPath, string targetName)
-        {
-            try
-            {
-                using (RegistryKey uninstallKey = rootKey.OpenSubKey(subKeyPath))
-                {
-                    if (uninstallKey == null) return null;
-
-                    foreach (string subKeyName in uninstallKey.GetSubKeyNames())
-                    {
-                        using (RegistryKey subKey = uninstallKey.OpenSubKey(subKeyName))
-                        {
-                            string name = subKey?.GetValue("DisplayName") as string;
-                            if (!string.IsNullOrEmpty(name) && name.Contains(targetName))
-                            {
-                                return subKeyName; // Product Code bu subKeyName
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Xatolik yuz berdi: {ex.Message}");
-                SQLiteHelper.WriteError($"ProductCode topishda xatolik: {ex.Message}");
-            }
-            return null;
-        }
-
         private async Task<bool> DownloadAndInstallApp(string appName, string command)
         {
             try
@@ -298,7 +247,10 @@ namespace SocketClient
                 string jwtToken = await SQLiteHelper.GetJwtToken();
                 if (string.IsNullOrEmpty(jwtToken)) return false;
 
+                Console.WriteLine($"Install app uchun token: {jwtToken}");
+
                 string requestUrl = $"{apiUrl}{appName}";
+                Console.WriteLine($"Install app uchun url: {requestUrl}");
                 string savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), $"{appName}");
                 //string savePath = Path.Combine(Path.GetTempPath(), $"{appName}");
 
@@ -323,6 +275,9 @@ namespace SocketClient
             {
                 httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
                 var response = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+
+                Console.WriteLine("Download response: " + response.StatusCode);
+
                 if (!response.IsSuccessStatusCode) return false;
 
                 using (var stream = await response.Content.ReadAsStreamAsync())
@@ -469,7 +424,6 @@ namespace SocketClient
             await client.EmitAsync("response", result);
             SQLiteHelper.WriteLog("SocketClient", "EmitResponseAsync", $"Command: {command}, Status: {result.status}");
         }
-
         private async Task EmitDeleteResponse(string status, string message)
         {
             await client.EmitAsync("delete_agent", new

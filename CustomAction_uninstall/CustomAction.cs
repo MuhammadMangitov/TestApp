@@ -1,135 +1,3 @@
-/*using System;
-using System.Diagnostics;
-using System.IO;
-using Microsoft.Deployment.WindowsInstaller;
-
-namespace CustomAction_uninstall
-{
-    public class CustomActions
-    {
-        private static Session session;
-
-        private static void Log(string text)
-        {
-            try
-            {
-                string logFilePath = "C:\\Logs\\CustomActionLog.txt";
-                Directory.CreateDirectory(Path.GetDirectoryName(logFilePath));
-                using (StreamWriter writer = new StreamWriter(logFilePath, true))
-                {
-                    writer.WriteLine($"{DateTime.Now}: {text}");
-                }
-            }
-            catch (Exception ex)
-            {
-                session?.Log($"Error writing log: {ex.Message}");
-            }
-
-            session?.Log(text);
-        }
-
-        [CustomAction]
-        public static ActionResult CustomAction_uninstall(Session session)
-        {
-            CustomActions.session = session;
-            session.Log("CustomAction_uninstall started.");
-            Log("CustomAction_uninstall started.");
-
-            try
-            {
-                Process[] processes = Process.GetProcessesByName("DgzAIO");
-                foreach (Process process in processes)
-                {
-                    try
-                    {
-                        process.CloseMainWindow();
-                        process.WaitForExit(5000); // 5 soniya kutish
-                        if (!process.HasExited)
-                        {
-                            process.Kill();
-                            Log("Process DgzAIO.exe was forcibly terminated.");
-                        }
-                        else
-                        {
-                            Log("Process DgzAIO.exe was gracefully terminated.");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log($"Error terminating process: {ex.Message}");
-                    }
-                }
-
-                string taskName = "DgzAIO";
-                try
-                {
-                    var taskDelete = new Process
-                    {
-                        StartInfo = new ProcessStartInfo
-                        {
-                            FileName = "schtasks",
-                            Arguments = $"/Delete /TN \"{taskName}\" /F",
-                            UseShellExecute = false,
-                            CreateNoWindow = true
-                        }
-                    };
-                    taskDelete.Start();
-                    taskDelete.WaitForExit();
-                    Log(taskDelete.ExitCode == 0
-                        ? $"Scheduled task {taskName} deleted."
-                        : $"Warning: Could not delete scheduled task {taskName}.");
-                }
-                catch (Exception ex)
-                {
-                    Log($"Error deleting scheduled task: {ex.Message}");
-                }
-
-                string programDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "DgzAIO");
-                if (Directory.Exists(programDataPath))
-                {
-                    Log($"Deleting folder: {programDataPath}");
-                    try
-                    {
-                        foreach (string file in Directory.GetFiles(programDataPath, "*", SearchOption.AllDirectories))
-                        {
-                            try
-                            {
-                                File.SetAttributes(file, System.IO.FileAttributes.Normal);
-                                File.Delete(file);
-                                Log($"Deleted file: {file}");
-                            }
-                            catch (IOException ex)
-                            {
-                                Log($"Cannot delete {file}: {ex.Message}");
-                            }
-                        }
-                        Directory.Delete(programDataPath, true);
-                        Log($"Deleted folder: {programDataPath}");
-                    }
-                    catch (Exception ex)
-                    {
-                        Log($"Error deleting {programDataPath}: {ex.Message}");
-                    }
-                }
-                else
-                {
-                    Log($"Folder {programDataPath} does not exist.");
-                }
-
-                session.Log("CustomAction_uninstall completed successfully.");
-                Log("CustomAction_uninstall completed successfully.");
-                return ActionResult.Success;
-            }
-            catch (Exception ex)
-            {
-                Log($"ERROR in CustomAction_uninstall: {ex.Message}");
-                session.Log($"ERROR in CustomAction_uninstall: {ex.Message}");
-                return ActionResult.Failure;
-            }
-        }
-    }
-}*/
-
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -149,7 +17,7 @@ namespace CustomAction_uninstall
 
             try
             {
-                string logFilePath = @"C:\Logs\CustomActionLog.txt";
+                string logFilePath = @"C:\ProgramData\DgzAIO\Logs\CustomActionLog.txt";
                 using (StreamWriter writer = new StreamWriter(logFilePath, true))
                 {
                     writer.WriteLine($"{DateTime.Now}: {text}");
@@ -170,9 +38,9 @@ namespace CustomAction_uninstall
         public static ActionResult CustomAction_uninstall(Session session)
         {
             CustomActions.session = session;
-            session.Log("CustomAction_uninstall started.");
-            Log("CustomAction_uninstall started.");
-            
+            session.Log("CustomAction_uninstall boshlandi.");
+            Log("CustomAction_uninstall boshlandi.");
+
             var serviceName = "DgzAIOService";
 
             try
@@ -181,20 +49,21 @@ namespace CustomAction_uninstall
                 if (sc.Status != ServiceControllerStatus.Stopped)
                 {
                     sc.Stop();
-                    Log($"Stopping service {serviceName}...");
+                    Log($"Xizmat to‘xtatilyapti: {serviceName}...");
                     sc.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(15));
                 }
                 Process.Start("sc", $"delete {serviceName}").WaitForExit();
-                Log($"{serviceName} service deleted.");
+                Log($"Xizmat o‘chirildi: {serviceName}.");
             }
             catch (Exception ex)
             {
                 EventLog.WriteEntry("ServiceHelper", ex.Message, EventLogEntryType.Error);
             }
+
             try
             {
                 string processName = "DgzAIO.exe";
-                session.Log($"Attempting to terminate {processName}...");
+                session.Log($"Jarayon tugatilmoqda: {processName}...");
 
                 var taskKill = new Process();
                 taskKill.StartInfo.FileName = "taskkill";
@@ -206,111 +75,131 @@ namespace CustomAction_uninstall
 
                 if (taskKill.ExitCode == 0)
                 {
-                    Log($"{processName} successfully terminated.");
-                    session.Log($"{processName} successfully terminated.");
+                    Log($"{processName} muvaffaqiyatli to‘xtatildi.");
+                    session.Log($"{processName} muvaffaqiyatli to‘xtatildi.");
                 }
                 else
                 {
-                    Log($"Warning: Could not terminate {processName}. It may not be running.");
-                    session.Log($"Warning: Could not terminate {processName}. It may not be running.");
+                    Log($"Ogohlantirish: {processName}ni to‘xtatib bo‘lmadi. Ehtimol ishga tushirilmagan.");
+                    session.Log($"Ogohlantirish: {processName}ni to‘xtatib bo‘lmadi. Ehtimol ishga tushirilmagan.");
                 }
 
                 string installPath = @"C:\Program Files (x86)\DgzAIO";
-                session.Log($"Checking installation folder: {installPath}");
+                session.Log($"O‘rnatish papkasi tekshirilmoqda: {installPath}");
 
                 if (Directory.Exists(installPath))
                 {
                     try
                     {
                         foreach (var file in Directory.GetFiles(installPath, "*", SearchOption.AllDirectories))
-                        {
                             File.SetAttributes(file, System.IO.FileAttributes.Normal);
-                        }
 
                         Directory.Delete(installPath, true);
-                        session.Log($"Installation folder {installPath} deleted.");
-                        Log($"Installation folder {installPath} deleted.");
+                        session.Log($"O‘rnatish papkasi o‘chirildi: {installPath}.");
+                        Log($"O‘rnatish papkasi o‘chirildi: {installPath}.");
                     }
                     catch (UnauthorizedAccessException ex)
                     {
-                        Log($"Access denied when deleting {installPath}: {ex.Message}");
-                        session.Log($"Access denied when deleting {installPath}: {ex.Message}");
+                        Log($"Ruxsat berilmadi: {installPath}ni o‘chirishda {ex.Message}");
+                        session.Log($"Ruxsat berilmadi: {installPath}ni o‘chirishda {ex.Message}");
                     }
                     catch (IOException ex)
                     {
-                        Log($"IO error when deleting {installPath}: {ex.Message}. Some files may be in use.");
-                        session.Log($"IO error when deleting {installPath}: {ex.Message}. Some files may be in use.");
+                        Log($"IO xatolik: {installPath}ni o‘chirishda {ex.Message}. Ba'zi fayllar ishlatilmoqda.");
+                        session.Log($"IO xatolik: {installPath}ni o‘chirishda {ex.Message}. Ba'zi fayllar ishlatilmoqda.");
                     }
                 }
                 else
                 {
-                    Log($"Installation folder {installPath} does not exist.");
-                    session.Log($"Installation folder {installPath} does not exist.");
+                    Log($"O‘rnatish papkasi topilmadi: {installPath}.");
+                    session.Log($"O‘rnatish papkasi topilmadi: {installPath}.");
                 }
 
-                string dbPath = @"C:\ProgramData\DgzAIO";
-                session.Log($"Checking database folder: {dbPath}");
+                string dbPath = @"C:\ProgramData\DgzAIO\DgzAIODb";
+                session.Log($"Ma'lumotlar bazasi papkasi tekshirilmoqda: {dbPath}");
 
                 if (Directory.Exists(dbPath))
                 {
                     try
                     {
                         foreach (var file in Directory.GetFiles(dbPath, "*", SearchOption.AllDirectories))
-                        {
                             File.SetAttributes(file, System.IO.FileAttributes.Normal);
-                        }
 
                         Directory.Delete(dbPath, true);
-                        Log($"Database folder {dbPath} deleted.");
-                        session.Log($"Database folder {dbPath} deleted.");
+                        Log($"Ma'lumotlar bazasi papkasi o‘chirildi: {dbPath}.");
+                        session.Log($"Ma'lumotlar bazasi papkasi o‘chirildi: {dbPath}.");
                     }
                     catch (UnauthorizedAccessException ex)
                     {
-                        Log($"Access denied when deleting {dbPath}: {ex.Message}");
-                        session.Log($"Access denied when deleting {dbPath}: {ex.Message}");
+                        Log($"Ruxsat berilmadi: {dbPath}ni o‘chirishda {ex.Message}");
+                        session.Log($"Ruxsat berilmadi: {dbPath}ni o‘chirishda {ex.Message}");
                     }
                     catch (IOException ex)
                     {
-                        Log($"IO error when deleting {dbPath}: {ex.Message}. Some files may be in use.");
-                        session.Log($"IO error when deleting {dbPath}: {ex.Message}. Some files may be in use.");
+                        Log($"IO xatolik: {dbPath}ni o‘chirishda {ex.Message}. Ba'zi fayllar ishlatilmoqda.");
+                        session.Log($"IO xatolik: {dbPath}ni o‘chirishda {ex.Message}. Ba'zi fayllar ishlatilmoqda.");
                     }
                 }
                 else
                 {
-                    Log($"Database folder {dbPath} does not exist.");
-                    session.Log($"Database folder {dbPath} does not exist.");
+                    Log($"Ma'lumotlar bazasi papkasi topilmadi: {dbPath}.");
+                    session.Log($"Ma'lumotlar bazasi papkasi topilmadi: {dbPath}.");
                 }
 
-                string taskName = "DgzAIO";
-                session.Log($"Attempting to delete scheduled task {taskName}...");
-
-                var taskDelete = new Process();
-                taskDelete.StartInfo.FileName = "schtasks";
-                taskDelete.StartInfo.Arguments = $"/Delete /TN \"{taskName}\" /F";
-                taskDelete.StartInfo.UseShellExecute = false;
-                taskDelete.StartInfo.CreateNoWindow = true;
-                taskDelete.Start();
-                taskDelete.WaitForExit();
-
-                if (taskDelete.ExitCode == 0)
+                try
                 {
-                    Log($"Scheduled task {taskName} successfully deleted.");
-                    session.Log($"Scheduled task {taskName} successfully deleted.");
+                    string taskName = "DgzAIO";
+                    session.Log($"Rejalashtirilgan vazifa o‘chirilyapti: {taskName}...");
+
+                    var taskDelete = new Process();
+                    taskDelete.StartInfo.FileName = "schtasks";
+                    taskDelete.StartInfo.Arguments = $"/Delete /TN \"{taskName}\" /F";
+                    taskDelete.StartInfo.UseShellExecute = false;
+                    taskDelete.StartInfo.CreateNoWindow = true;
+                    taskDelete.Start();
+                    taskDelete.WaitForExit();
+
+                    if (taskDelete.ExitCode == 0)
+                    {
+                        Log($"Rejalashtirilgan vazifa muvaffaqiyatli o‘chirildi: {taskName}.");
+                        session.Log($"Rejalashtirilgan vazifa muvaffaqiyatli o‘chirildi: {taskName}.");
+                    }
+                    else
+                    {
+                        Log($"Ogohlantirish: Rejalashtirilgan vazifani o‘chirib bo‘lmadi: {taskName}. Ehtimol mavjud emas.");
+                        session.Log($"Ogohlantirish: Rejalashtirilgan vazifani o‘chirib bo‘lmadi: {taskName}. Ehtimol mavjud emas.");
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    Log($"Warning: Could not delete scheduled task {taskName}. It may not exist.");
-                    session.Log($"Warning: Could not delete scheduled task {taskName}. It may not exist.");
+                    Log($"Xato: rejalashtirilgan vazifani o‘chirishda {ex.Message}");
+                    session.Log($"Xato: rejalashtirilgan vazifani o‘chirishda {ex.Message}");
                 }
 
-                session.Log("CustomAction_uninstall completed successfully.");
-                Log("CustomAction_uninstall completed successfully.");
+                try
+                {
+                    using (var baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32))
+                    {
+                        baseKey.DeleteSubKeyTree(@"SOFTWARE\WOW6432Node\Datagaze", throwOnMissingSubKey: false);
+
+                        session.Log(@"Registriyadan 'HKLM\SOFTWARE\WOW6432Node\Datagaze' o‘chirildi.");
+                        Log(@"Registriyadan 'HKLM\SOFTWARE\WOW6432Node\Datagaze' o‘chirildi.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    session.Log($"Ogohlantirish: Datagaze kalitini o‘chirishda xato: {ex.Message}");
+                    Log($"Ogohlantirish: Datagaze kalitini o‘chirishda xato: {ex.Message}");
+                }
+
+                session.Log("CustomAction_uninstall muvaffaqiyatli yakunlandi.");
+                Log("CustomAction_uninstall muvaffaqiyatli yakunlandi.");
                 return ActionResult.Success;
             }
             catch (Exception ex)
             {
-                Log($"ERROR in CustomAction_uninstall: {ex.Message}");
-                session.Log($"ERROR in CustomAction_uninstall: {ex.Message}");
+                Log($"XATO: CustomAction_uninstall jarayonida: {ex.Message}");
+                session.Log($"XATO: CustomAction_uninstall jarayonida: {ex.Message}");
                 return ActionResult.Failure;
             }
         }

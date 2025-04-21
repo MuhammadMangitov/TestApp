@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"><?define DgzAIO_TargetDir=$(var.DgzAIO.TargetDir)?>
-	<Product Id="*" Name="DgzAIO" Language="1033" Version="0.1.1.1" Manufacturer="Dgz LLC" UpgradeCode="5D3D5F89-6BE8-478D-B0E7-7D9D73251846">
+	<Product Id="*" Name="DgzAIO" Language="1033" Version="2.0.0.0" Manufacturer="Datagaze LLC" UpgradeCode="5D3D5F89-6BE8-478D-B0E7-7D9D73251846">
 		<Package Description="Test file in a Product" Comments="Simple test" InstallerVersion="200" Compressed="yes" InstallScope="perMachine"/>
 		<Property Id="MSICACHEORIGINALPACKAGE" Value="1" />
 		<Property Id="MsiLogging" Value="voicewarmup" />
@@ -34,11 +34,10 @@
 									 Action="createAndRemoveOnUninstall">
 							<RegistryValue Name="DisplayName" Type="string" Value="DgzAIO" />
 							<RegistryValue Name="Publisher" Type="string" Value="Dgz LLC" />
-							<RegistryValue Name="DisplayVersion" Type="string" Value="0.1.1.1" />
+							<RegistryValue Name="DisplayVersion" Type="string" Value="[ProductVersion]" />
 							<RegistryValue Name="InstallSource" Type="string" Value="[SourceDir]" />
 							<RegistryValue Name="InstallLocation" Type="string" Value="[INSTALLFOLDER]" />
 							<RegistryValue Name="UninstallString" Type="string" Value="MsiExec.exe /x[ProductCode]" />
-							<RegistryValue Name="QuietUninstallString" Type="string" Value="MsiExec.exe /x[ProductCode] /qn" />
 							<RegistryValue Name="NoModify" Type="integer" Value="1" />
 							<RegistryValue Name="NoRepair" Type="integer" Value="1" />
 							<RegistryValue Name="EstimatedSize" Type="integer" Value="10240" />

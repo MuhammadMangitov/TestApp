@@ -5,42 +5,68 @@ using System.IO;
 using DgzAIO.HttpService;
 using System.Threading.Tasks;
 using System.Linq;
+using System.Security.Policy;
 
 namespace DBHelper
 {
     public class SQLiteHelper
     {
-        public static string ApplicationDirectory => 
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), 
-                AppDomain.CurrentDomain.FriendlyName);
+        public static string ProjectDataPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "DgzAIO");
+        public static string ApplicationDirectory =>
+                Path.Combine(ProjectDataPath, "DgzAIODb");
 
+        public static string logFilePath =>
+                Path.Combine(ProjectDataPath,"Logs", "DgzAIODbLog.txt");
         public static SQLiteConnection CreateConnection()
         {
-            string appDirectory = ApplicationDirectory.Split('.').FirstOrDefault(); ;
-
             try
             {
-                if (!Directory.Exists(appDirectory))
+                
+                if (!Directory.Exists(ProjectDataPath))
                 {
-                    Directory.CreateDirectory(appDirectory);
-                    Console.WriteLine($"Katalog yaratildi: {appDirectory}");
+                    Directory.CreateDirectory(ProjectDataPath);
+                    Console.WriteLine($"Katalog yaratildi: {ProjectDataPath}");
                 }
 
-                string dbPath = Path.Combine(appDirectory, "DgzAIO.db");
+                if (!Directory.Exists(Path.Combine(ProjectDataPath, "Logs")))
+                {
+                    Directory.CreateDirectory(Path.Combine(ProjectDataPath, "Logs"));
+                    Console.WriteLine($"Log katalogi yaratildi: {Path.Combine(ProjectDataPath, "Logs")}");
+                }
+
+                if (!File.Exists(logFilePath))
+                {
+                    File.Create(logFilePath).Dispose();
+                    Log("Log fayli yaratildi: " + logFilePath);
+                    Console.WriteLine($"Log file yaratildi: {logFilePath}");
+                }
+
+                if (!Directory.Exists(ApplicationDirectory))
+                {
+                    Directory.CreateDirectory(ApplicationDirectory);
+                    Log($"DgzAIODb katalogi yaratildi: {ApplicationDirectory}");
+                    Console.WriteLine($"DgzAIODb katalog yaratildi: {ApplicationDirectory}");
+                }
+
+                string dbPath = Path.Combine(ApplicationDirectory, "DgzAIO.db");
 
                 if (!File.Exists(dbPath))
                 {
                     Console.WriteLine("Baza mavjud emas! Fayl yaratilmoqda...");
                     SQLiteConnection.CreateFile(dbPath);  
+                    Log($"Baza fayli yaratildi: {dbPath}");
                 }
 
                 SQLiteConnection connection = new SQLiteConnection($"Data Source={dbPath};Version=3;");
                 connection.Open();
+                Log($"Baza bilan bog'lanish muvaffaqiyatli: {dbPath}");
                 return connection;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Xatolik: {ex.Message}");
+                Log($"Xatolik: {ex.Message}");
                 throw;
             }
         }
@@ -62,6 +88,7 @@ namespace DBHelper
                             message TEXT NOT NULL
                         )";
                         command.ExecuteNonQuery();
+                        Log("LogEntry jadvali yaratildi yoki allaqachon mavjud.");
 
                         command.CommandText = @"
                         CREATE TABLE IF NOT EXISTS Error (
@@ -70,6 +97,7 @@ namespace DBHelper
                             created_date TEXT NOT NULL
                         )";
                         command.ExecuteNonQuery();
+                        Log("Error jadvali yaratildi yoki allaqachon mavjud.");
 
                         command.CommandText = @"
                         CREATE TABLE IF NOT EXISTS Configurations (
@@ -81,17 +109,20 @@ namespace DBHelper
                             last_sent_time TEXT
                         )";
                         command.ExecuteNonQuery();
+                        Log("Configurations jadvali yaratildi yoki allaqachon mavjud.");
 
                         command.CommandText = @"
                         INSERT OR IGNORE INTO Configurations (id, server_ip, Jwt_token, report_time, modules, last_sent_time) 
                         VALUES (1, 'default_ip', 'default_token', 0, 'default_modules', NULL)";
                         command.ExecuteNonQuery();
+                        Log("Configurations jadvaliga default qiymatlar kiritildi yoki allaqachon mavjud.");
                     }
 
                     Console.WriteLine("Jadvallar muvaffaqiyatli yaratildi yoki allaqachon mavjud.");
                 }
                 catch (Exception ex)
                 {
+                    Log($"Jadvallarni yaratishda xatolik: {ex.Message}");
                     Console.WriteLine($"Jadvallarni yaratishda xatolik: {ex.Message}");
                 }
             }
@@ -321,6 +352,21 @@ namespace DBHelper
             if (lastSentTime == null) return true;
 
             return (DateTime.UtcNow - lastSentTime.Value).TotalHours >= 24;
+        }
+
+        public static void Log(string message)
+        {
+            string logMessage = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} - {message}";
+            Console.WriteLine(logMessage);
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(logFilePath));
+                File.AppendAllText(logFilePath, logMessage + Environment.NewLine);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Log yozishda xato: {ex.Message}");
+            }
         }
     }
 }
