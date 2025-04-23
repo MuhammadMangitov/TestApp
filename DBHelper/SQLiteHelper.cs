@@ -17,187 +17,202 @@ namespace DBHelper
                 Path.Combine(ProjectDataPath, "DgzAIODb");
 
         public static string logFilePath =>
-                Path.Combine(ProjectDataPath,"Logs", "DgzAIODbLog.txt");
+                Path.Combine(ProjectDataPath, "Logs", "DgzAIODbLog.txt");
+
+        private static SQLiteConnection _connection;
+        private static readonly object _lock = new object(); 
+
         public static SQLiteConnection CreateConnection()
         {
-            try
+            lock (_lock) // Ko‘p ipli muhitda xavfsizlikni ta'minlash
             {
-                
-                if (!Directory.Exists(ProjectDataPath))
+                try
                 {
-                    Directory.CreateDirectory(ProjectDataPath);
-                    Console.WriteLine($"Katalog yaratildi: {ProjectDataPath}");
-                }
+                    if (_connection != null && _connection.State == System.Data.ConnectionState.Open)
+                    {
+                        return _connection; // Agar ulanish ochiq bo‘lsa, uni qaytarish
+                    }
 
-                if (!Directory.Exists(Path.Combine(ProjectDataPath, "Logs")))
+                    if (!Directory.Exists(ProjectDataPath))
+                    {
+                        Directory.CreateDirectory(ProjectDataPath);
+                        Console.WriteLine($"Directory created: {ProjectDataPath}");
+                    }
+
+                    if (!Directory.Exists(Path.Combine(ProjectDataPath, "Logs")))
+                    {
+                        Directory.CreateDirectory(Path.Combine(ProjectDataPath, "Logs"));
+                        Console.WriteLine($"Log directory created: {Path.Combine(ProjectDataPath, "Logs")}");
+                    }
+
+                    if (!File.Exists(logFilePath))
+                    {
+                        File.Create(logFilePath).Dispose();
+                        Log("Log file created: " + logFilePath);
+                        Console.WriteLine($"Log file created: {logFilePath}");
+                    }
+
+                    if (!Directory.Exists(ApplicationDirectory))
+                    {
+                        Directory.CreateDirectory(ApplicationDirectory);
+                        Log($"DgzAIODb directory created: {ApplicationDirectory}");
+                        Console.WriteLine($"DgzAIODb directory created: {ApplicationDirectory}");
+                    }
+
+                    string dbPath = Path.Combine(ApplicationDirectory, "DgzAIO.db");
+
+                    if (!File.Exists(dbPath))
+                    {
+                        Console.WriteLine("Database does not exist! Creating file...");
+                        SQLiteConnection.CreateFile(dbPath);
+                        Log($"Database file created: {dbPath}");
+                    }
+
+                    _connection = new SQLiteConnection($"Data Source={dbPath};Version=3;");
+                    _connection.Open();
+                    Log($"Successfully connected to database: {dbPath}");
+                    return _connection;
+                }
+                catch (Exception ex)
                 {
-                    Directory.CreateDirectory(Path.Combine(ProjectDataPath, "Logs"));
-                    Console.WriteLine($"Log katalogi yaratildi: {Path.Combine(ProjectDataPath, "Logs")}");
+                    Console.WriteLine($"Error: {ex.Message}");
+                    Log($"Error: {ex.Message}");
+                    throw;
                 }
-
-                if (!File.Exists(logFilePath))
-                {
-                    File.Create(logFilePath).Dispose();
-                    Log("Log fayli yaratildi: " + logFilePath);
-                    Console.WriteLine($"Log file yaratildi: {logFilePath}");
-                }
-
-                if (!Directory.Exists(ApplicationDirectory))
-                {
-                    Directory.CreateDirectory(ApplicationDirectory);
-                    Log($"DgzAIODb katalogi yaratildi: {ApplicationDirectory}");
-                    Console.WriteLine($"DgzAIODb katalog yaratildi: {ApplicationDirectory}");
-                }
-
-                string dbPath = Path.Combine(ApplicationDirectory, "DgzAIO.db");
-
-                if (!File.Exists(dbPath))
-                {
-                    Console.WriteLine("Baza mavjud emas! Fayl yaratilmoqda...");
-                    SQLiteConnection.CreateFile(dbPath);  
-                    Log($"Baza fayli yaratildi: {dbPath}");
-                }
-
-                SQLiteConnection connection = new SQLiteConnection($"Data Source={dbPath};Version=3;");
-                connection.Open();
-                Log($"Baza bilan bog'lanish muvaffaqiyatli: {dbPath}");
-                return connection;
             }
-            catch (Exception ex)
+        }
+
+        public static void CloseConnection()
+        {
+            lock (_lock)
             {
-                Console.WriteLine($"Xatolik: {ex.Message}");
-                Log($"Xatolik: {ex.Message}");
-                throw;
+                if (_connection != null && _connection.State == System.Data.ConnectionState.Open)
+                {
+                    _connection.Close();
+                    _connection = null;
+                    Log("Database connection closed.");
+                }
             }
         }
 
         public static void CreateTablesIfNotExists()
         {
-            using (var connection = CreateConnection())
+            var connection = CreateConnection(); // using bloki olib tashlandi
+            try
             {
-                try
+                using (var command = connection.CreateCommand())
                 {
-                    using (var command = connection.CreateCommand())
-                    {
-                        command.CommandText = @"
-                        CREATE TABLE IF NOT EXISTS LogEntry (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            module TEXT NOT NULL,
-                            function TEXT NOT NULL,
-                            created_date TEXT NOT NULL,
-                            message TEXT NOT NULL
-                        )";
-                        command.ExecuteNonQuery();
-                        Log("LogEntry jadvali yaratildi yoki allaqachon mavjud.");
+                    command.CommandText = @"
+                    CREATE TABLE IF NOT EXISTS LogEntry (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        module TEXT NOT NULL,
+                        function TEXT NOT NULL,
+                        created_date TEXT NOT NULL,
+                        message TEXT NOT NULL
+                    )";
+                    command.ExecuteNonQuery();
+                    Log("LogEntry table created or already exists.");
 
-                        command.CommandText = @"
-                        CREATE TABLE IF NOT EXISTS Error (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            message TEXT NOT NULL,
-                            created_date TEXT NOT NULL
-                        )";
-                        command.ExecuteNonQuery();
-                        Log("Error jadvali yaratildi yoki allaqachon mavjud.");
+                    command.CommandText = @"
+                    CREATE TABLE IF NOT EXISTS Error (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        message TEXT NOT NULL,
+                        created_date TEXT NOT NULL
+                    )";
+                    command.ExecuteNonQuery();
+                    Log("Error table created or already exists.");
 
-                        command.CommandText = @"
-                        CREATE TABLE IF NOT EXISTS Configurations (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            server_ip TEXT NOT NULL,
-                            Jwt_token TEXT NOT NULL,
-                            report_time INTEGER,
-                            modules TEXT NOT NULL,
-                            last_sent_time TEXT
-                        )";
-                        command.ExecuteNonQuery();
-                        Log("Configurations jadvali yaratildi yoki allaqachon mavjud.");
+                    command.CommandText = @"
+                    CREATE TABLE IF NOT EXISTS Configurations (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        server_ip TEXT NOT NULL,
+                        Jwt_token TEXT NOT NULL,
+                        report_time INTEGER,
+                        modules TEXT NOT NULL,
+                        last_sent_time TEXT
+                    )";
+                    command.ExecuteNonQuery();
+                    Log("Configurations table created or already exists.");
 
-                        command.CommandText = @"
-                        INSERT OR IGNORE INTO Configurations (id, server_ip, Jwt_token, report_time, modules, last_sent_time) 
-                        VALUES (1, 'default_ip', 'default_token', 0, 'default_modules', NULL)";
-                        command.ExecuteNonQuery();
-                        Log("Configurations jadvaliga default qiymatlar kiritildi yoki allaqachon mavjud.");
-                    }
-
-                    Console.WriteLine("Jadvallar muvaffaqiyatli yaratildi yoki allaqachon mavjud.");
+                    command.CommandText = @"
+                    INSERT OR IGNORE INTO Configurations (id, server_ip, Jwt_token, report_time, modules, last_sent_time) 
+                    VALUES (1, 'default_ip', 'default_token', 0, 'default_modules', NULL)";
+                    command.ExecuteNonQuery();
+                    Log("Default values inserted into Configurations table or already exist.");
                 }
-                catch (Exception ex)
-                {
-                    Log($"Jadvallarni yaratishda xatolik: {ex.Message}");
-                    Console.WriteLine($"Jadvallarni yaratishda xatolik: {ex.Message}");
-                }
+
+                Console.WriteLine("Tables successfully created or already exist.");
+            }
+            catch (Exception ex)
+            {
+                Log($"Error creating tables: {ex.Message}");
+                Console.WriteLine($"Error creating tables: {ex.Message}");
             }
         }
 
         public static void InsertJwtToken(string token)
         {
-            using (var connection = CreateConnection())
-            {
-                if (connection == null) return;
+            var connection = CreateConnection();
+            if (connection == null) return;
 
-                try
+            try
+            {
+                using (var command = connection.CreateCommand())
                 {
-                    using (var command = connection.CreateCommand())
-                    {
-                        command.CommandText = "UPDATE Configurations SET Jwt_token = @jwt_token WHERE id = 1";
-                        command.Parameters.AddWithValue("@jwt_token", token);
-                        command.ExecuteNonQuery();
-                    }
+                    command.CommandText = "UPDATE Configurations SET Jwt_token = @jwt_token WHERE id = 1";
+                    command.Parameters.AddWithValue("@jwt_token", token);
+                    command.ExecuteNonQuery();
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Xatolik: {ex.Message}");
-                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
             }
         }
 
         public static void DeleteOldJwtToken()
         {
-            using (var connection = CreateConnection())
-            {
-                if (connection == null) return;
+            var connection = CreateConnection();
+            if (connection == null) return;
 
-                try
+            try
+            {
+                using (var command = connection.CreateCommand())
                 {
-                    using (var command = connection.CreateCommand())
-                    {
-                        command.CommandText = "UPDATE Configurations SET Jwt_token = NULL WHERE Jwt_token IS NOT NULL";
-                        command.ExecuteNonQuery();
-                    }
+                    command.CommandText = "UPDATE Configurations SET Jwt_token = NULL WHERE Jwt_token IS NOT NULL";
+                    command.ExecuteNonQuery();
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Xatolik: {ex.Message}");
-                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
             }
         }
 
         public static async Task<string> GetJwtToken()
         {
             string token = null;
+            var connection = CreateConnection();
+            if (connection == null) return null;
 
-            using (var connection = CreateConnection())
+            try
             {
-                if (connection == null) return null;
-
-                try
+                using (var command = connection.CreateCommand())
                 {
-                    using (var command = connection.CreateCommand())
-                    {
-                        command.CommandText = "SELECT Jwt_token FROM Configurations LIMIT 1";
+                    command.CommandText = "SELECT Jwt_token FROM Configurations LIMIT 1";
 
-                        using (var reader = await command.ExecuteReaderAsync())
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
                         {
-                            if (await reader.ReadAsync())
-                            {
-                                token = reader["Jwt_token"]?.ToString();
-                            }
+                            token = reader["Jwt_token"]?.ToString();
                         }
                     }
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Xatolik: {ex.Message}");
-                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
             }
 
             return token;
@@ -205,30 +220,28 @@ namespace DBHelper
 
         public static void ClearLogs()
         {
-            using (var connection = CreateConnection())
+            var connection = CreateConnection();
+            if (connection == null) return;
+
+            try
             {
-                if (connection == null) return;
-
-                try
+                using (var deleteCommand = connection.CreateCommand())
                 {
-                    using (var deleteCommand = connection.CreateCommand())
-                    {
-                        deleteCommand.CommandText = "DELETE FROM LogEntry";
-                        deleteCommand.ExecuteNonQuery();
-                    }
-
-                    using (var resetCommand = connection.CreateCommand())
-                    {
-                        resetCommand.CommandText = "UPDATE sqlite_sequence SET seq = 0 WHERE name = 'LogEntry'";
-                        resetCommand.ExecuteNonQuery();
-                    }
-
-                    Console.WriteLine("Loglar muvaffaqiyatli o‘chirildi va ID 1 dan boshlashga sozlandi.");
+                    deleteCommand.CommandText = "DELETE FROM LogEntry";
+                    deleteCommand.ExecuteNonQuery();
                 }
-                catch (Exception ex)
+
+                using (var resetCommand = connection.CreateCommand())
                 {
-                    Console.WriteLine($"Loglarni o‘chirishda xato: {ex.Message}");
+                    resetCommand.CommandText = "UPDATE sqlite_sequence SET seq = 0 WHERE name = 'LogEntry'";
+                    resetCommand.ExecuteNonQuery();
                 }
+
+                Console.WriteLine("Logs successfully cleared and ID reset to start from 1.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error clearing logs: {ex.Message}");
             }
         }
 
@@ -236,34 +249,31 @@ namespace DBHelper
         {
             if (string.IsNullOrEmpty(module) || string.IsNullOrEmpty(function) || string.IsNullOrEmpty(message))
             {
-                Console.WriteLine("Module, function yoki message bo‘sh bo‘lmasligi kerak");
+                Console.WriteLine("Module, function, or message cannot be empty.");
                 return;
             }
 
             var createdDate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            var connection = CreateConnection();
+            if (connection == null) return;
 
-            using (var connection = CreateConnection())
+            try
             {
-                if (connection == null) return;
-
-                try
+                using (var command = connection.CreateCommand())
                 {
-                    using (var command = connection.CreateCommand())
-                    {
-                        command.CommandText = @"
-                            INSERT INTO LogEntry (module, function, created_date, message) 
-                            VALUES (@module, @function, @created_date, @message)";
-                        command.Parameters.AddWithValue("@module", module);
-                        command.Parameters.AddWithValue("@function", function);
-                        command.Parameters.AddWithValue("@created_date", createdDate);
-                        command.Parameters.AddWithValue("@message", message);
-                        command.ExecuteNonQuery();
-                    }
+                    command.CommandText = @"
+                        INSERT INTO LogEntry (module, function, created_date, message) 
+                        VALUES (@module, @function, @created_date, @message)";
+                    command.Parameters.AddWithValue("@module", module);
+                    command.Parameters.AddWithValue("@function", function);
+                    command.Parameters.AddWithValue("@created_date", createdDate);
+                    command.Parameters.AddWithValue("@message", message);
+                    command.ExecuteNonQuery();
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Log yozishda xato: {ex.Message}");
-                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error writing log: {ex.Message}");
             }
         }
 
@@ -271,81 +281,75 @@ namespace DBHelper
         {
             if (string.IsNullOrEmpty(message))
             {
-                Console.WriteLine("Xato xabari bo‘sh bo‘lishi mumkin emas.");
+                Console.WriteLine("Error message cannot be empty.");
                 return;
             }
 
             var createdDate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            var connection = CreateConnection();
+            if (connection == null) return;
 
-            using (var connection = CreateConnection())
+            try
             {
-                if (connection == null) return;
-
-                try
+                using (var command = new SQLiteCommand(@"INSERT INTO ""Error"" (""message"", ""created_date"") 
+                                                 VALUES (@message, @created_date)", connection))
                 {
-                    using (var command = new SQLiteCommand(@"INSERT INTO ""Error"" (""message"", ""created_date"") 
-                                                     VALUES (@message, @created_date)", connection))
-                    {
-                        command.Parameters.AddWithValue("@message", message);
-                        command.Parameters.AddWithValue("@created_date", createdDate);
-                        command.ExecuteNonQuery();
-                    }
+                    command.Parameters.AddWithValue("@message", message);
+                    command.Parameters.AddWithValue("@created_date", createdDate);
+                    command.ExecuteNonQuery();
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Xatoni yozishda xatolik yuz berdi: {ex.Message}");
-                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error occurred while writing error: {ex.Message}");
             }
         }
 
         public static DateTime? GetLastSentTime()
         {
-            using (var connection = CreateConnection())
+            var connection = CreateConnection();
+            if (connection == null) return null;
+
+            try
             {
-                if (connection == null) return null;
-
-                try
+                using (var command = connection.CreateCommand())
                 {
-                    using (var command = connection.CreateCommand())
-                    {
-                        command.CommandText = "SELECT last_sent_time FROM Configurations LIMIT 1";
+                    command.CommandText = "SELECT last_sent_time FROM Configurations LIMIT 1";
 
-                        var result = command.ExecuteScalar();
-                        if (result != null && DateTime.TryParse(result.ToString(), out DateTime lastSentTime))
-                        {
-                            return lastSentTime;
-                        }
+                    var result = command.ExecuteScalar();
+                    if (result != null && DateTime.TryParse(result.ToString(), out DateTime lastSentTime))
+                    {
+                        return lastSentTime;
                     }
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Xatolik: {ex.Message}");
-                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
             }
             return null;
         }
 
         public static void UpdateLastSentTime(DateTime dateTime)
         {
-            using (var connection = CreateConnection())
-            {
-                if (connection == null) return;
+            var connection = CreateConnection();
+            if (connection == null) return;
 
-                try
+            try
+            {
+                using (var command = connection.CreateCommand())
                 {
-                    using (var command = connection.CreateCommand())
-                    {
-                        command.CommandText = "UPDATE Configurations SET last_sent_time = @last_sent_time WHERE id = 1";
-                        command.Parameters.AddWithValue("@last_sent_time", dateTime.ToString("yyyy-MM-dd HH:mm:ss"));
-                        command.ExecuteNonQuery();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Xatolik: {ex.Message}");
+                    command.CommandText = "UPDATE Configurations SET last_sent_time = @last_sent_time WHERE id = 1";
+                    command.Parameters.AddWithValue("@last_sent_time", dateTime.ToString("yyyy-MM-dd HH:mm:ss"));
+                    command.ExecuteNonQuery();
                 }
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
         }
+
         public static bool ShouldSendProgramInfo()
         {
             DateTime? lastSentTime = GetLastSentTime();
@@ -365,7 +369,7 @@ namespace DBHelper
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Log yozishda xato: {ex.Message}");
+                Console.WriteLine($"Error writing log: {ex.Message}");
             }
         }
     }

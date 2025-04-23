@@ -19,12 +19,12 @@ namespace DgzAIO
                 agentUpdater.CheckAndUpdate().Wait();
 
                 Modules.Start();
-                Console.WriteLine("Barcha modullar ishga tushdi!");
+                Console.WriteLine("All modules have been launched.!");
 
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Xatolik yuz berdi: {ex}");
+                Console.WriteLine($"An error occurred: {ex}");
             }
 
             Console.ReadLine();

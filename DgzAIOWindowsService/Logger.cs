@@ -25,8 +25,7 @@ namespace DgzAIOWindowsService
             }
             catch (Exception ex)
             {
-                // Agar log katalogini yaratib bo‘lmasa, boshqa yo‘l bilan log yozish kerak (masalan Event Log)
-                Console.WriteLine("Log katalogi yaratilmadi: " + ex.Message);
+                Console.WriteLine("Log directory could not be created.: " + ex.Message);
             }
         }
 
@@ -37,7 +36,7 @@ namespace DgzAIOWindowsService
                 File.AppendAllText(logFile,
                     $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}{Environment.NewLine}");
             }
-            catch { /* log yozib bo‘lmadi - xatolikni yutamiz */ }
+            catch {}
         }
 
         public static void LogError(string message)
@@ -47,7 +46,7 @@ namespace DgzAIOWindowsService
                 File.AppendAllText(errorFile,
                     $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] ERROR: {message}{Environment.NewLine}");
             }
-            catch { /* log yozib bo‘lmadi - xatolikni yutamiz */ }
+            catch {}
         }
     }
 }

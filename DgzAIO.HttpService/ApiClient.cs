@@ -25,15 +25,15 @@ namespace DgzAIO.HttpService
             try
             {
                 var computerInfo = await ComputerInfo.GetComputerInfoAsync();
-                Console.WriteLine($"Kompyuter ma'lumotlari: {JsonConvert.SerializeObject(computerInfo)}");
+                //Console.WriteLine($"Computers info: {JsonConvert.SerializeObject(computerInfo)}");
 
                 var jsonContent = JsonConvert.SerializeObject(computerInfo);
                 var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
                 var response = await client.PostAsync(BaseUrl, content);
                 int statusCode = (int)response.StatusCode;
-                Console.WriteLine($"RESPONSE URL: {response.RequestMessage}");
-                Console.WriteLine($"RESPONSE : {response}");
+                /*Console.WriteLine($"RESPONSE URL: {response.RequestMessage}");
+                Console.WriteLine($"RESPONSE : {response}");*/
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -41,19 +41,19 @@ namespace DgzAIO.HttpService
                     var jsonResponse = JsonConvert.DeserializeObject<dynamic>(responseBody);
 
                     string token = jsonResponse?.token;
-                    Console.WriteLine($"JWT token apidan kelgan: {token}");
+                    //Console.WriteLine($"JWT token apidan kelgan: {token}");
                     return (token, statusCode);
                 }
                 else
                 {
-                    Console.WriteLine($"JWT olishda xatolik: {response.StatusCode}");
+                    Console.WriteLine($"Jwt token getting error: {response.StatusCode}");
                     return (null, statusCode);
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"API ga so'rov yuborishda xatolik: {ex.Message}");
-                SQLiteHelper.WriteError($"API ga so'rov yuborishda xatolik: {ex.Message}");
+                Console.WriteLine($"Error sending request to API: {ex.Message}");
+                SQLiteHelper.WriteError($"Error sending request to API: {ex.Message}");
                 return (null, 500);
             }
         }
@@ -79,22 +79,22 @@ namespace DgzAIO.HttpService
                     return true;
                 }
 
-                Console.WriteLine($"[Xatolik]: {response.StatusCode} - {response.ReasonPhrase}");
+                Console.WriteLine($"[Error]: {response.StatusCode} - {response.ReasonPhrase}");
             }
             catch (HttpRequestException httpEx)
             {
-                Console.WriteLine($"[HTTP Xatolik]: {httpEx.Message}");
-                SQLiteHelper.WriteError($"HTTP Xatolik: {httpEx.Message}");
+                Console.WriteLine($"[HTTP error]: {httpEx.Message}");
+                SQLiteHelper.WriteError($"HTTP error: {httpEx.Message}");
             }
             catch (TaskCanceledException)
             {
-                Console.WriteLine("[HTTP Xatolik]: So‘rov vaqt chegarasidan oshib ketdi.");
-                SQLiteHelper.WriteError("HTTP Xatolik: So‘rov vaqt chegarasidan oshib ketdi.");
+                Console.WriteLine("[HTTP error]: So‘rov vaqt chegarasidan oshib ketdi.");
+                SQLiteHelper.WriteError("HTTP error: So‘rov vaqt chegarasidan oshib ketdi.");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Noma'lum xatolik]: {ex.Message}");
-                SQLiteHelper.WriteError($"Noma'lum xatolik: {ex.Message}");
+                Console.WriteLine($"[Unknown error]: {ex.Message}");
+                SQLiteHelper.WriteError($"Unknown error: {ex.Message}");
             }
 
             return false;
@@ -102,6 +102,7 @@ namespace DgzAIO.HttpService
 
         public static async Task<bool> SendProgramInfo(List<ProgramDetails> programs)
         {
+            //Console.WriteLine($"Computers info: {JsonConvert.SerializeObject(programs)}");
             return await SendData(BaseUrlForApps, programs);
         }
 

@@ -22,10 +22,10 @@ namespace DgzAIO.Services
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"CPU haqida ma'lumot olishda xatolik: {ex.Message}");
-                    DBHelper.SQLiteHelper.WriteError($"CPU haqida ma'lumot olishda xatolik: {ex.Message}");
+                    Console.WriteLine($"Error getting CPU information: {ex.Message}");
+                    DBHelper.SQLiteHelper.WriteError($"Error getting CPU information: {ex.Message}");
                 }
-                return "Noma'lum";
+                return "Unknown";
             });
         }
         public static async Task<int> GetCpuCoresAsync()
@@ -44,8 +44,8 @@ namespace DgzAIO.Services
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"CPU yadrolari haqida ma'lumot olishda xatolik: {ex.Message}");
-                    DBHelper.SQLiteHelper.WriteError($"CPU yadrolari haqida ma'lumot olishda xatolik: {ex.Message}");
+                    Console.WriteLine($"Error getting information about CPU cores: {ex.Message}");
+                    DBHelper.SQLiteHelper.WriteError($"Error getting information about CPU cores: {ex.Message}");
                 }
                 return 0;
             });
@@ -66,10 +66,10 @@ namespace DgzAIO.Services
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"CPU modeli haqida ma'lumot olishda xatolik: {ex.Message}");
-                    DBHelper.SQLiteHelper.WriteError($"CPU modeli haqida ma'lumot olishda xatolik: {ex.Message}");
+                    Console.WriteLine($"Error retrieving CPU model information: {ex.Message}");
+                    DBHelper.SQLiteHelper.WriteError($"Error retrieving CPU model information: {ex.Message}");
                 }
-                return "Noma'lum";
+                return "Unknown";
             });
         }
     }

@@ -34,8 +34,8 @@ public class AgentUpdater
             }
             catch (UnauthorizedAccessException)
             {
-                Log("C:\\ProgramData\\Agent\\ papkasini yaratish uchun administrator huquqlari kerak!");
-                Console.WriteLine("C:\\ProgramData\\Agent\\ papkasini yaratish uchun administrator huquqlari kerak!");
+                Log("Administrator permissions are required to create the C:\\ProgramData\\Agent\\ directory!");
+                Console.WriteLine("Administrator permissions are required to create the C:\\ProgramData\\Agent\\ directory!");
                 throw;
             }
         }
@@ -53,29 +53,29 @@ public class AgentUpdater
     {
         try
         {
-            Console.WriteLine($"{ localPath}");
+            Console.WriteLine($"{localPath}");
 
-            Console.WriteLine("Yangilanish tekshirilmoqda...");
-            Log("Yangilanish tekshirilmoqda...");
+            Console.WriteLine("Checking for updates...");
+            Log("Checking for updates...");
 
             string jsonResponse = await client.GetStringAsync(SERVER_URL);
-            Log("Server javobi: " + jsonResponse);
+            Log("Server response: " + jsonResponse);
 
-            Console.WriteLine("Server javobi: " + jsonResponse);
+            Console.WriteLine("Server response: " + jsonResponse);
             var updateInfo = JsonSerializer.Deserialize<UpdateInfo>(jsonResponse);
             if (updateInfo == null)
             {
-                Log("Deserialization muvaffaqiyatsiz bo‘ldi!");
-                Console.WriteLine("Deserialization muvaffaqiyatsiz bo‘ldi!");
+                Log("Deserialization failed!");
+                Console.WriteLine("Deserialization failed!");
                 return;
             }
 
-            Log("Deserialization muvaffaqiyatli bo‘ldi!");
-            Console.WriteLine("Deserialization muvaffaqiyatli bo‘ldi!");
-            Log("Server versiyasi: " + updateInfo.Version);
-            Log("Joriy versiya: " + currentVersion);
-            Console.WriteLine("Server versiyasi: " + updateInfo.Version);
-            Console.WriteLine("Joriy versiya: " + currentVersion);
+            Log("Deserialization successful!");
+            Console.WriteLine("Deserialization successful!");
+            Log("Server version: " + updateInfo.Version);
+            Log("Current version: " + currentVersion);
+            Console.WriteLine("Server version: " + updateInfo.Version);
+            Console.WriteLine("Current version: " + currentVersion);
 
             if (IsNewerVersion(updateInfo.Version, currentVersion))
             {
@@ -83,40 +83,40 @@ public class AgentUpdater
                 string downloadUrl = DOWNLOAD_URL + zipFileName;
                 string zipPath = Path.Combine(localPath, zipFileName);
 
-                Log($"ZIP fayli yuklanmoqda: {downloadUrl}");
-                Console.WriteLine($"ZIP fayli yuklanmoqda: {downloadUrl}");
+                Log($"Downloading ZIP file: {downloadUrl}");
+                Console.WriteLine($"Downloading ZIP file: {downloadUrl}");
                 var zipBytes = await client.GetByteArrayAsync(downloadUrl);
                 try
                 {
                     File.WriteAllBytes(zipPath, zipBytes);
-                    Log($"ZIP fayli saqlandi: {zipPath}");
+                    Log($"ZIP file saved: {zipPath}");
                 }
                 catch (IOException ex)
                 {
-                    Log($"Faylni {zipPath} ga yozishda xato: {ex.Message}");
-                    Console.WriteLine($"Faylni {zipPath} ga yozishda xato: {ex.Message}");
+                    Log($"Error writing file to {zipPath}: {ex.Message}");
+                    Console.WriteLine($"Error writing file to {zipPath}: {ex.Message}");
                     throw;
                 }
 
                 SendUpdateToService(zipPath);
-                Log("Yangilanish yuklab olindi va xizmatga yuborildi.");
-                Console.WriteLine("Yangilanish yuklab olindi va xizmatga yuborildi.");
+                Log("Update downloaded and sent to service.");
+                Console.WriteLine("Update downloaded and sent to service.");
             }
             else
             {
-                Log("Joriy versiya yangi yoki teng.");
-                Console.WriteLine("Joriy versiya yangi yoki teng.");
+                Log("Current version is up-to-date or newer.");
+                Console.WriteLine("Current version is up-to-date or newer.");
             }
         }
         catch (HttpRequestException ex)
         {
-            Log($"Server bilan aloqa xatosi: {ex.Message}");
-            Console.WriteLine($"Server bilan aloqa xatosi: {ex.Message}");
+            Log($"Server communication error: {ex.Message}");
+            Console.WriteLine($"Server communication error: {ex.Message}");
         }
         catch (Exception ex)
         {
-            Log($"Xatolik yuz berdi: {ex.Message}");
-            Console.WriteLine($"Xatolik yuz berdi: {ex.Message}");
+            Log($"An error occurred: {ex.Message}");
+            Console.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 
@@ -130,15 +130,15 @@ public class AgentUpdater
         }
         catch (Exception ex)
         {
-            Log($"Versiyalarni solishtirishda xato: {ex.Message}");
+            Log($"Error comparing versions: {ex.Message}");
             return false;
         }
     }
 
     private void SendUpdateToService(string zipPath)
     {
-        Log("Yangilanish xizmatga yuborilmoqda...");
-        Console.WriteLine("Yangilanish xizmatga yuborilmoqda...");
+        Log("Sending update to service...");
+        Console.WriteLine("Sending update to service...");
         var binding = new NetNamedPipeBinding();
         var endpoint = new EndpointAddress("net.pipe://localhost/DgzAIOWindowsService");
 
@@ -156,15 +156,15 @@ public class AgentUpdater
             }
             catch (EndpointNotFoundException)
             {
-                Log("Xizmat topilmadi, ishga tushirilganligini tekshiring.");
+                Log("Service not found, please check if it is running.");
             }
             catch (CommunicationException ex)
             {
-                Log($"WCF aloqa xatosi: {ex.Message}");
+                Log($"WCF communication error: {ex.Message}");
             }
             catch (Exception ex)
             {
-                Log($"Xatolik: {ex.Message}");
+                Log($"Error: {ex.Message}");
             }
             finally
             {
@@ -182,11 +182,12 @@ public class AgentUpdater
 
                 if (success)
                 {
-                    Log("Yangilanish xizmatga muvaffaqiyatli yuborildi.");
+                    Log("Update successfully sent to service.");
                 }
             }
         }
     }
+
     private void Log(string message)
     {
         string logPath = Path.Combine(localPath, "agent_updater.log");
@@ -196,7 +197,7 @@ public class AgentUpdater
         }
         catch
         {
-            Console.WriteLine(message); 
+            Console.WriteLine(message);
         }
     }
 }

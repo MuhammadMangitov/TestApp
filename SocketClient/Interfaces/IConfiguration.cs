@@ -4,9 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DgzAIO
+namespace SocketClient.Interfaces
 {
-    class Utils
+    public interface IConfiguration
     {
+        string GetApiUrl();
+        string GetSocketUrl();
     }
 }

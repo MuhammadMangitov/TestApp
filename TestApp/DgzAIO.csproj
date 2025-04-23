@@ -148,16 +148,13 @@
     <Compile Include="AgentUpdater.cs" />
     <Compile Include="ConfigurationManagerDgzAIO.cs" />
     <Compile Include="Models\UpdateInfo.cs" />
-    <Compile Include="PipeClient.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Modules.cs" />
-    <Compile Include="Utils.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
-    <None Include="Update_info.json" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ApplicationMonitor\ApplicationMonitor.csproj">

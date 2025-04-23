@@ -25,56 +25,7 @@ namespace DgzAIO
             }
             else
             {
-                Console.WriteLine("[DBHelper] Baza bilan ulanishda xatolik yuz berdi. Ilova ishga tushmadi.");
-            }
-        }
-
-        public static bool StartDBHelper()
-        {
-            Console.WriteLine("[DBHelper] SQLite ulanishi amalga oshirilmoqda...");
-
-            var connection = SQLiteHelper.CreateConnection();
-
-            if (connection != null)
-            {
-                Console.WriteLine("[DBHelper] SQLite ulanishi muvaffaqiyatli!");
-
-                SQLiteHelper.CreateTablesIfNotExists();
-
-                return true;
-            }
-            else
-            {
-                Console.WriteLine("[DBHelper] Xatolik yuz berdi!");
-                return false;
-            }
-        }
-        public static void StartComputerInformation()
-        {
-            Thread thread = new Thread(new ThreadStart(StartComputerInformationThread));
-            thread.Start();
-        }
-
-        private static void StartComputerInformationThread()
-        {
-            Console.WriteLine("[Computer Information] Timer boshlanmoqda...");
-            SQLiteHelper.WriteLog("Modules", "StartComputerInformationThread", "Timer boshlanmoqda...");
-            StartTimer();
-        }
-
-        public static void StartApplicationMonitor()
-        {
-            Thread thread = new Thread(new ThreadStart(StartApplicationMonitorThread));
-            thread.Start();
-        }
-
-        private static void StartApplicationMonitorThread()
-        {
-            if (SQLiteHelper.ShouldSendProgramInfo())
-            {
-                SQLiteHelper.WriteLog("Modules", "StartApplicationMonitorThread", "Dasturlar ro‘yxati API ga yuborilmoqda");
-                Console.WriteLine("[Application Monitor] Dasturlar ro‘yxati API ga yuborilmoqda...");
-                SendProgramInfo().Wait();
+                Console.WriteLine("[DBHelper] Error occurred while connecting to the database. Application failed to start.");
             }
         }
 
@@ -88,30 +39,78 @@ namespace DgzAIO
         {
             try
             {
-                Console.WriteLine("[Socket Client] Ulanish boshlanmoqda...");
+                Console.WriteLine("[Socket Client] Connection starting...");
 
                 var socketManager = new SocketClient.SocketClient();
 
                 bool isConnected = await socketManager.StartSocketListener();
 
-
                 if (isConnected)
                 {
-                    SQLiteHelper.WriteLog("Modules", "StartSocketClientThread", "Socket.io muvaffaqiyatli ulandi");
-                    Console.WriteLine("[Socket Client] Socket.io muvaffaqiyatli ulandi!");
+                    SQLiteHelper.WriteLog("Modules", "StartSocketClientThread", "Socket.io connected successfully");
+                    Console.WriteLine("[Socket Client] Socket.io connected successfully!");
                 }
                 else
                 {
-                    SQLiteHelper.WriteLog("Modules", "StartSocketClientThread", "Socket.io ulanishda xatolik yuz berdi");
-                    Console.WriteLine("[Socket Client] Ulanishda xatolik yuz berdi!");
+                    SQLiteHelper.WriteLog("Modules", "StartSocketClientThread", "Error occurred while connecting to Socket.io");
+                    Console.WriteLine("[Socket Client] Error occurred while connecting!");
                 }
             }
             catch (Exception ex)
             {
-                SQLiteHelper.WriteLog("Modules", "StartSocketClientThread", $"Xatolik: {ex.Message}");
-                Console.WriteLine($"[Socket Client] Xatolik: {ex.Message}");
+                SQLiteHelper.WriteLog("Modules", "StartSocketClientThread", $"Error: {ex.Message}");
+                Console.WriteLine($"[Socket Client] Error: {ex.Message}");
             }
+        }
 
+        public static bool StartDBHelper()
+        {
+            Console.WriteLine("[DBHelper] Establishing SQLite connection...");
+
+            var connection = SQLiteHelper.CreateConnection();
+
+            if (connection != null)
+            {
+                Console.WriteLine("[DBHelper] SQLite connection successful!");
+
+                SQLiteHelper.CreateTablesIfNotExists();
+
+                return true;
+            }
+            else
+            {
+                Console.WriteLine("[DBHelper] Error occurred!");
+                return false;
+            }
+        }
+
+        public static void StartComputerInformation()
+        {
+            Thread thread = new Thread(new ThreadStart(StartComputerInformationThread));
+            thread.Start();
+        }
+
+        private static void StartComputerInformationThread()
+        {
+            Console.WriteLine("[Computer Information] Timer starting...");
+            SQLiteHelper.WriteLog("Modules", "StartComputerInformationThread", "Timer starting...");
+            StartTimer();
+        }
+
+        public static void StartApplicationMonitor()
+        {
+            Thread thread = new Thread(new ThreadStart(StartApplicationMonitorThread));
+            thread.Start();
+        }
+
+        private static void StartApplicationMonitorThread()
+        {
+            if (SQLiteHelper.ShouldSendProgramInfo())
+            {
+                SQLiteHelper.WriteLog("Modules", "StartApplicationMonitorThread", "Sending program list to API");
+                Console.WriteLine("[Application Monitor] Sending program list to API...");
+                SendProgramInfo().Wait();
+            }
         }
 
         public static void StartApiClient()
@@ -122,49 +121,51 @@ namespace DgzAIO
 
         private static async void StartApiClientThread()
         {
-            Console.WriteLine("[API Client] JWT token olinmoqda...");
+            Console.WriteLine("[API Client] Retrieving JWT token...");
             var (token, statusCode) = await ApiClient.GetJwtTokenFromApi();
             if (!string.IsNullOrEmpty(token))
             {
                 SQLiteHelper.InsertJwtToken(token);
-                SQLiteHelper.WriteLog("Modules", "StartApiClientThread", "JWT token saqlandi");
-                Console.WriteLine("[API Client] JWT token saqlandi!");
-
-                if (statusCode == 201)
+                SQLiteHelper.WriteLog("Modules", "StartApiClientThread", "JWT token saved");
+                Console.WriteLine("[API Client] JWT token saved!");
+                Console.WriteLine($"statusCode: {statusCode}");
+                if (statusCode == 201 || statusCode == 200)
                 {
                     await SendProgramInfo();
+                    
                 }
             }
             else
             {
-                SQLiteHelper.WriteLog("Modules", "StartApiClientThread", "JWT token olishda xatolik yuz berdi");
-                Console.WriteLine("[API Client] JWT token olishda xatolik yuz berdi!");
+                SQLiteHelper.WriteLog("Modules", "StartApiClientThread", "Error occurred while retrieving JWT token");
+                Console.WriteLine("[API Client] Error occurred while retrieving JWT token!");
             }
             StartSocketClient();
         }
 
         private static async Task SendProgramInfo()
         {
-            Console.WriteLine("[Application Monitor] Dasturlar ro‘yxati olinmoqda...");
+            Console.WriteLine("[Application Monitor] Retrieving program list...");
             var programs = ApplicationMonitor.ApplicationMonitor.GetInstalledPrograms();
             bool success = await ApiClient.SendProgramInfo(await programs);
 
             if (success)
             {
-                SQLiteHelper.WriteLog("Modules", "SendProgramInfo", "Dasturlar ro‘yxati API ga muvaffaqiyatli jo‘natildi");
-                Console.WriteLine("[Application Monitor] Dasturlar ro‘yxati muvaffaqiyatli jo‘natildi.");
+                SQLiteHelper.WriteLog("Modules", "SendProgramInfo", "Program list successfully sent to API");
+                Console.WriteLine("[Application Monitor] Program list successfully sent.");
+                
                 SQLiteHelper.UpdateLastSentTime(DateTime.UtcNow);
             }
             else
             {
-                SQLiteHelper.WriteLog("Modules", "SendProgramInfo", "Dasturlar ro‘yxatini jo‘natishda xatolik yuz berdi");
-                Console.WriteLine("[Application Monitor] Dasturlar ro‘yxatini jo‘natishda xatolik yuz berdi!");
+                SQLiteHelper.WriteLog("Modules", "SendProgramInfo", "Error occurred while sending program list");
+                Console.WriteLine("[Application Monitor] Error occurred while sending program list!");
             }
         }
 
-        private static void StartTimer()
+        /*private static void StartTimer()
         {
-            SQLiteHelper.WriteLog("Modules", "StartTimer", "24 soatlik timer ishga tushirildi");
+            SQLiteHelper.WriteLog("Modules", "StartTimer", "24-hour timer started");
             DispatcherTimer timer = new DispatcherTimer
             {
                 Interval = TimeSpan.FromHours(24)
@@ -172,13 +173,13 @@ namespace DgzAIO
 
             timer.Tick += async (sender, args) =>
             {
-                Console.WriteLine("[Timer] 24 soat o‘tdi, yangi ma’lumot yuborilmoqda...");
-                SQLiteHelper.WriteLog("Modules", "StartTimer", "24 soat o‘tdi, yangi ma’lumot yuborilmoqda");
+                Console.WriteLine("[Timer] 24 hours passed, sending new information...");
+                SQLiteHelper.WriteLog("Modules", "StartTimer", "24 hours passed, sending new information");
 
                 if (!SQLiteHelper.ShouldSendProgramInfo())
                 {
-                    SQLiteHelper.WriteLog("Modules", "StartTimer", "24 soat o‘tmaganligi sababli dasturlar ro‘yxati jo‘natilmadi");
-                    Console.WriteLine("[Timer] 24 soat o‘tmaganligi sababli dasturlar ro‘yxati jo‘natilmadi.");
+                    SQLiteHelper.WriteLog("Modules", "StartTimer", "Program list not sent because 24 hours have not passed");
+                    Console.WriteLine("[Timer] Program list not sent because 24 hours have not passed.");
                     return;
                 }
 
@@ -186,30 +187,32 @@ namespace DgzAIO
             };
 
             timer.Start();
-        }
+        }*/
 
-        public static void Exe_info_CreateJson()
+        private static System.Timers.Timer _infoTimer;
+
+        private static void StartTimer()
         {
-            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            SQLiteHelper.WriteLog("Modules", "StartTimer", "24-hour timer started");
 
-            string sourceDir = Path.GetFullPath(Path.Combine(baseDir, @"..\..\..\TestApp\bin\Release"));
-            string exePath = Path.Combine(sourceDir, "DgzAIO.exe");
-            string jsonPath = Path.Combine(sourceDir, "agent_update_info.json");
-
-
-            string version = System.Diagnostics.FileVersionInfo.GetVersionInfo(exePath).FileVersion;
-            var updateInfo = new
+            _infoTimer = new System.Timers.Timer(TimeSpan.FromHours(24).TotalMilliseconds);
+            _infoTimer.Elapsed += async (sender, e) =>
             {
-                version = version,
+                Console.WriteLine("[Timer] 24 hours passed, sending new information...");
+                SQLiteHelper.WriteLog("Modules", "StartTimer", "24 hours passed, sending new information");
+
+                if (!SQLiteHelper.ShouldSendProgramInfo())
+                {
+                    SQLiteHelper.WriteLog("Modules", "StartTimer", "Program list not sent because 24 hours have not passed");
+                    Console.WriteLine("[Timer] Program list not sent because 24 hours have not passed.");
+                    return;
+                }
+
+                await SendProgramInfo();
             };
-
-            string json = JsonConvert.SerializeObject(updateInfo, Formatting.Indented);
-            File.WriteAllText(jsonPath, json);
-            Console.WriteLine("Update info json tayyorlandi!");
-
+            _infoTimer.AutoReset = true;
+            _infoTimer.Start();
         }
+
     }
 }
-
-
-

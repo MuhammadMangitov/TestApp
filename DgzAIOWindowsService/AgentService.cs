@@ -17,7 +17,6 @@ namespace DgzAIOWindowsService
 {
     public class AgentService : IAgentService
     {
-
         private static readonly string logFilePath = @"C:\ProgramData\DgzAIO\Logs\AgentService.log";
 
         [DllImport("msi.dll", CharSet = CharSet.Auto)]
@@ -30,15 +29,15 @@ namespace DgzAIOWindowsService
                 string guid = ReadProductGUID();
                 if (string.IsNullOrEmpty(guid))
                 {
-                    Log("[Uninstall] GUID topilmadi. Uninstall bekor qilindi.");
+                    Log("[Uninstall] GUID not found. Uninstall canceled.");
                     return;
                 }
 
                 int state = MsiQueryProductState(guid);
-                Log($"[Uninstall] Mahsulot holati: {state} (0 - o‘rnatilgan, 1 - o‘rnatilmagan, -1 - xato).");
+                Log($"[Uninstall] Product state: {state} (0 - installed, 1 - not installed, -1 - error).");
                 if (state < 0)
                 {
-                    Log($"[Uninstall] Mahsulot o‘rnatilmagan (state={state}). Uninstall buyrug‘i bajarilmaydi.");
+                    Log($"[Uninstall] Product not installed (state={state}). Uninstall command will not be executed.");
                     return;
                 }
                 string command = $"/c \"MsiExec.exe /x{guid} /qn\"";
@@ -57,7 +56,7 @@ namespace DgzAIOWindowsService
                 Process process = new Process();
                 process.StartInfo = psi;
 
-                Log("Uninstall jarayoni boshlanyapti...");
+                Log("Uninstall process starting...");
                 Log($"{psi.Arguments.ToString()}");
                 process.Start();
 
@@ -67,29 +66,30 @@ namespace DgzAIOWindowsService
                     int exitCode = process.ExitCode;
                     if (exitCode == 0)
                     {
-                        Log("[Uninstall] Uninstallation muvaffaqiyatli yakunlandi.");
+                        Log("[Uninstall] Uninstallation completed successfully.");
                     }
                     else if (exitCode == 1605)
                     {
-                        Log("[Uninstall] Mahsulot topilmadi (error 1605), ehtimol allaqachon o‘chirib tashlangan.");
+                        Log("[Uninstall] Product not found (error 1605), possibly already uninstalled.");
                     }
                     else
                     {
-                        Log($"[Uninstall] Uninstallation xatoligi: Exit Code {exitCode}");
+                        Log($"[Uninstall] Uninstallation error: Exit Code {exitCode}");
                     }
                 }
                 else
                 {
-                    Log("[Uninstall] BAT fayl ishga tushmadi.");
+                    Log("[Uninstall] BAT file failed to start.");
                 }
 
                 Thread.Sleep(5000);
             }
             catch (Exception ex)
             {
-                Log("[Uninstall] Xatolik: " + ex.Message);
+                Log("[Uninstall] Error: " + ex.Message);
             }
         }
+
         private string ReadProductGUID()
         {
             string guid = null;
@@ -130,12 +130,12 @@ namespace DgzAIOWindowsService
                     sc.Status != ServiceControllerStatus.StopPending)
                 {
                     sc.Stop();
-                    Log("[Uninstall] Service to'xtatish komandasi yuborildi.");
+                    Log("[Uninstall] Service stop command sent.");
                 }
             }
             catch (Exception ex)
             {
-                Log("[Uninstall] Service to'xtatishda xato: " + ex.Message);
+                Log("[Uninstall] Error stopping service: " + ex.Message);
             }
         }
 
@@ -151,10 +151,9 @@ namespace DgzAIOWindowsService
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Log yozishda xato: {ex.Message}");
+                Console.WriteLine($"Error writing log: {ex.Message}");
             }
         }
-
 
         public void UpdateAgent(string zipPath, string localPath)
         {
@@ -166,7 +165,6 @@ namespace DgzAIOWindowsService
 
             try
             {
-
                 if (Directory.Exists(tempDir))
                     Directory.Delete(tempDir, true);
                 ZipFile.ExtractToDirectory(zipPath, tempDir);
@@ -174,12 +172,12 @@ namespace DgzAIOWindowsService
                 using (StreamWriter sw = new StreamWriter(batFilePath, false, Encoding.UTF8))
                 {
                     sw.WriteLine("@echo off");
-                    sw.WriteLine($"echo [{DateTime.Now}] Yangilanish boshlandi. >> \"{logFile}\"");
+                    sw.WriteLine($"echo [{DateTime.Now}] Update started. >> \"{logFile}\"");
 
-                    sw.WriteLine("echo Servis to'xtatilmoqda... >> \"" + logFile + "\"");
+                    sw.WriteLine("echo Stopping service... >> \"" + logFile + "\"");
                     sw.WriteLine("net stop DgzAIOService >> \"" + logFile + "\"");
 
-                    sw.WriteLine("echo Asosiy dastur to'xtatilmoqda... >> \"" + logFile + "\"");
+                    sw.WriteLine("echo Stopping main application... >> \"" + logFile + "\"");
                     sw.WriteLine("taskkill /F /IM DgzAIO.exe >> \"" + logFile + "\"");
 
                     sw.WriteLine(":waitloop");
@@ -201,16 +199,16 @@ namespace DgzAIOWindowsService
                         sw.WriteLine($"copy /Y \"{sourceFile}\" \"{destFile}\" >> \"{logFile}\"");
                     }
 
-                    // Vaqtinchalik fayllarni o‘chirish
-                    sw.WriteLine($"echo Vaqtinchalik fayllar o'chirilmoqda... >> \"{logFile}\"");
+                    // Delete temporary files
+                    sw.WriteLine($"echo Deleting temporary files... >> \"{logFile}\"");
                     sw.WriteLine($"rmdir /F /Q \"{localPath}\" >> \"{logFile}\"");
                     sw.WriteLine($"rmdir /S /Q \"{tempDir}\" >> \"{logFile}\"");
 
-                    // Servisni ishga tushirish
-                    sw.WriteLine("echo Servis ishga tushirilmoqda... >> \"" + logFile + "\"");
+                    // Start service
+                    sw.WriteLine("echo Starting service... >> \"" + logFile + "\"");
                     sw.WriteLine("net start DgzAIOService >> \"" + logFile + "\"");
 
-                    sw.WriteLine($"echo [{DateTime.Now}] Yangilanish tugadi. >> \"{logFile}\"");
+                    sw.WriteLine($"echo [{DateTime.Now}] Update completed. >> \"{logFile}\"");
                     sw.WriteLine("exit");
                 }
 
@@ -221,15 +219,15 @@ namespace DgzAIOWindowsService
                     Verb = "runas"
                 });
 
-                Log($".bat fayl yaratildi va ishga tushirildi: {batFilePath}");
-
+                Log($".bat file created and started: {batFilePath}");
             }
             catch (Exception ex)
             {
-                Log($"Yangilanish jarayonida xato: {ex.Message}");
+                Log($"Error during update process: {ex.Message}");
                 throw;
             }
         }
+
         private string GetRelativePath(string basePath, string fullPath)
         {
             Uri baseUri = new Uri(basePath.EndsWith("\\") ? basePath : basePath + "\\");

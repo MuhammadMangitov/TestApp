@@ -23,8 +23,8 @@ namespace DgzAIO.Services
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"RAM ma'lumotlarini olishda xatolik: {ex.Message}");
-                    SQLiteHelper.WriteError($"RAM ma'lumotlarini olishda xatolik: {ex.Message}");
+                    Console.WriteLine($"Error retrieving RAM data: {ex.Message}");
+                    SQLiteHelper.WriteError($"Error retrieving RAM data: {ex.Message}");
                 }
                 return 0;
             });
