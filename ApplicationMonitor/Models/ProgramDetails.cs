@@ -23,7 +23,7 @@ namespace DgzAIO.Models
         public string Type { get; set; }
 
         [JsonProperty("size")]
-        public int? Size { get; set; }
+        public double? Size { get; set; }
 
     }
 }

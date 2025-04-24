@@ -11,20 +11,20 @@ namespace DgzAIO
     class Program
     {
         [STAThread]
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             try
             {
                 AgentUpdater agentUpdater = new AgentUpdater();
-                agentUpdater.CheckAndUpdate().Wait();
+                await agentUpdater.CheckAndUpdate();
 
                 Modules.Start();
-                Console.WriteLine("Barcha modullar ishga tushdi!");
+                Console.WriteLine("All modules have been launched.!");
 
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Xatolik yuz berdi: {ex}");
+                Console.WriteLine($"An error occurred: {ex}");
             }
 
             Console.ReadLine();

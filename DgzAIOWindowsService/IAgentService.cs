@@ -6,7 +6,7 @@ namespace DgzAIOWindowsService
     public interface IAgentService
     {
         [OperationContract]
-        void UpdateAgent(string zipPath);
+        void UpdateAgent(string zipPath, string localPath);
 
         [OperationContract]
         void UninstallAgent();

@@ -70,6 +70,7 @@
   <ItemGroup>
     <Compile Include="AgentService.cs" />
     <Compile Include="IAgentService.cs" />
+    <Compile Include="Logger.cs" />
     <Compile Include="Service1.cs">
       <SubType>Component</SubType>
     </Compile>

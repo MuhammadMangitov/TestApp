@@ -32,8 +32,8 @@ namespace DgzAIO.Services
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Disklar haqida ma'lumot olishda xatolik: {ex.Message}");
-                    SQLiteHelper.WriteError($"Disklar haqida ma'lumot olishda xatolik: {ex.Message}");
+                    Console.WriteLine($"Error retrieving disk information: {ex.Message}");
+                    SQLiteHelper.WriteError($"Error retrieving disk information: {ex.Message}");
                 }
                 return disks;
             });

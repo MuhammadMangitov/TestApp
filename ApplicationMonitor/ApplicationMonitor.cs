@@ -19,12 +19,12 @@ namespace ApplicationMonitor
             var seenPrograms = new HashSet<string>();
 
             string[] registryKeysLocalMachine = {
-            @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
-            @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+                @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
             };
 
             string[] registryKeysCurrentUser = {
-            @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"
             };
 
             foreach (var keyPath in registryKeysLocalMachine)
@@ -69,12 +69,12 @@ namespace ApplicationMonitor
                                 bool isWindowsInstaller = subKey?.GetValue("WindowsInstaller") is int installer && installer == 1;
                                 object registrySize = subKey?.GetValue("EstimatedSize");
 
-                                int? size = await GetProgramSizeSmartAsync(name, installLocation, registrySize);
+                                double? size = await GetProgramSizeSmartAsync(name, installLocation, registrySize);
 
                                 programs.Add(new ProgramDetails
                                 {
                                     Name = name,
-                                    Size = size,
+                                    Size = size.HasValue ? Math.Round(size.Value, 2) : 0.0,
                                     Type = isWindowsInstaller ? "Windows Installer" : "User",
                                     InstalledDate = ParseInstallDate(subKey?.GetValue("InstallDate")?.ToString()),
                                     Version = version
@@ -83,7 +83,7 @@ namespace ApplicationMonitor
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"Xatolik yuz berdi: {ex.Message}");
+                            Console.WriteLine($"Xatolik yuz berdi1: {ex.Message}");
                             SQLiteHelper.WriteError($"Registry o‘qishda xatolik: {ex.Message}");
                         }
                     }
@@ -97,21 +97,21 @@ namespace ApplicationMonitor
         }
 
 
-        private static async Task<int?> GetProgramSizeSmartAsync(string programName, string installLocation, object registrySize)
+        private static async Task<double?> GetProgramSizeSmartAsync(string programName, string installLocation, object registrySize)
         {
             if (registrySize != null)
             {
-                return Convert.ToInt32(registrySize) / 1024;
+                return Convert.ToDouble(registrySize) / 1024;
             }
 
-            int? wmiSize = await Task.Run(() => GetProgramSizeWMI(programName));
+            double? wmiSize = await Task.Run(() => GetProgramSizeWMI(programName));
             if (wmiSize.HasValue)
                 return wmiSize;
 
             return await GetProgramSizeAsync(installLocation);
         }
 
-        private static int? GetProgramSizeWMI(string programName)
+        private static double? GetProgramSizeWMI(string programName)
         {
             try
             {
@@ -125,7 +125,7 @@ namespace ApplicationMonitor
                             object sizeObj = obj["EstimatedSize"];
                             if (sizeObj != null)
                             {
-                                return Convert.ToInt32(sizeObj) / 1024; // KB → MB
+                                return Convert.ToDouble(sizeObj) / 1024; // KB → MB
                             }
                         }
                     }
@@ -138,7 +138,7 @@ namespace ApplicationMonitor
             return null;
         }
 
-        private static async Task<int?> GetProgramSizeAsync(string installLocation)
+        private static async Task<double?> GetProgramSizeAsync(string installLocation)
         {
             if (string.IsNullOrEmpty(installLocation) || !Directory.Exists(installLocation))
                 return null;
@@ -150,7 +150,7 @@ namespace ApplicationMonitor
                                            .Select(f => new FileInfo(f).Length)
                                            .Sum());
 
-                return (int?)(size / 1024 / 1024); 
+                return (double?)(size / 1024 / 1024); 
             }
             catch (Exception ex)
             {

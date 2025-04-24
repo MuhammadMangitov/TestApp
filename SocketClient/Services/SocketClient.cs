@@ -1,4 +1,221 @@
-﻿using Microsoft.Win32;
+﻿using SocketClient.Interfaces;
+using SocketClient.Models;
+using SocketIOClient;
+using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Threading.Tasks;
+using DBHelper;
+using Newtonsoft.Json;
+
+namespace SocketClient
+{
+    public class SocketClient
+    {
+        private readonly SocketIOClient.SocketIO _client;
+        private readonly IApplicationManager _appManager;
+        private readonly IServiceCommunicator _serviceCommunicator;
+        private readonly ILogger _logger;
+        private readonly IConfiguration _config;
+        private bool _isRegistered = false;
+
+        public SocketClient()
+        {
+            _logger = new Helpers.Logger();
+            _config = new Helpers.ConfigurationManagerSocket();
+            var httpClient = new HttpClient();
+            var fileDownloader = new Utilities.FileDownloader(httpClient, _logger);
+            var registryHelper = new Helpers.RegistryHelper(_logger);
+            _appManager = new Managers.ApplicationManager(fileDownloader, registryHelper, _config, _logger);
+            _serviceCommunicator = new Helpers.ServiceCommunicator(_logger);
+
+            try
+            {
+                string socketUrl = _config.GetSocketUrl();
+                _logger.LogInformation($"Initializing SocketIO client with URL: {socketUrl}");
+                _client = new SocketIOClient.SocketIO(socketUrl, new SocketIOOptions
+                {
+                    Transport = SocketIOClient.Transport.TransportProtocol.WebSocket,
+                    Reconnection = true,
+                    ReconnectionAttempts = 50,
+                    ReconnectionDelay = 2000,
+                    ConnectionTimeout = TimeSpan.FromSeconds(20)
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Failed to initialize SocketIO client: {ex.Message}");
+                throw;
+            }
+
+            RegisterEvents();
+        }
+
+        private void RegisterEvents()
+        {
+            _client.On("connect", async response =>
+            {
+                _logger.LogInformation("Socket.io connected successfully!");
+                if (!_isRegistered)
+                {
+                    await _client.EmitAsync("register", "SystemMonitor_Client");
+                    _isRegistered = true;
+                    _logger.LogInformation("Client registered.");
+                }
+            });
+
+            _client.On("connect_error", response =>
+            {
+                _logger.LogError($"Socket connect_error: {response}");
+            });
+
+            _client.On("disconnect", response =>
+            {
+                _logger.LogError($"Socket disconnected: {response}");
+                _isRegistered = false;
+            });
+
+            _client.On("command", async response =>
+            {
+                _logger.LogInformation($"Received command event: {response}");
+                var commandData = response.GetValue<CommandData>();
+                _logger.LogInformation($"Command: {commandData.command}, App Name: {commandData.name}");
+                await HandleAppCommand(commandData);
+            });
+
+            _client.On("delete_agent", async response =>
+            {
+                _logger.LogInformation("Agent deletion requested.");
+                await EmitDeleteResponse("success", "Agent is being deleted...");
+                _serviceCommunicator.SendUninstallToService();
+                
+            });
+        }
+
+        public async Task<bool> StartSocketListener()
+        {
+            try
+            {
+                string jwtToken = await SQLiteHelper.GetJwtToken();
+                if (string.IsNullOrEmpty(jwtToken))
+                {
+                    _logger.LogError("Token not found!");
+                    return false;
+                }
+
+                _client.Options.ExtraHeaders = new Dictionary<string, string> { { "authorization", $"Bearer {jwtToken}" } };
+                _logger.LogInformation($"SocketURL: {_config.GetSocketUrl()}");
+
+                await _client.ConnectAsync();
+
+                if (!_client.Connected)
+                {
+                    _logger.LogError("Failed to connect to socket server!");
+                    return false;
+                }
+
+                _logger.LogInformation("Successfully connected to socket server!");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Socket connection error: {ex.Message}");
+                return false;
+            }
+        }
+
+        private async Task HandleAppCommand(CommandData data)
+        {
+            try
+            {
+                if (data == null || string.IsNullOrEmpty(data.command))
+                {
+                    _logger.LogError("Empty or invalid command!");
+                    await EmitResponseAsync("unknown", false, "Empty or invalid command");
+                    return;
+                }
+
+                string command = data.command.ToLower();
+                string appName = data.name ?? "";
+
+                bool success = false;
+
+                switch (command)
+                {
+                    case "delete_app":
+                        success = await _appManager.UninstallApplicationAsync(appName);
+                        break;
+                    case "install_app":
+                    case "update_app":
+                        success = await _appManager.InstallApplicationAsync(appName, command);
+                        _logger.LogInformation($"InstallApplicationAsync completed. Success: {success}");
+                        break;
+                    default:
+                        _logger.LogError($"Unknown command: {command}");
+                        await EmitResponseAsync(command, false, appName);
+                        return;
+                }
+
+                _logger.LogInformation($"About to emit response for command: {command}, Success: {success}, App Name: {appName}");
+                await EmitResponseAsync(command, success, appName);
+                _logger.LogInformation("EmitResponseAsync completed.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error: {ex.Message}");
+                await EmitResponseAsync(data?.command ?? "unknown", false, data?.name ?? "");
+            }
+        }
+
+        private async Task EmitResponseAsync(string command, bool success, string appName)
+        {
+            _logger.LogInformation($"Emitting response for command: {command}, Success: {success}, App Name: {appName}");
+            var result = new
+            {
+                status = success ? "success" : "error",
+                command,
+                name = appName
+            };
+
+            try
+            {
+                _logger.LogInformation($"Sending response to server: {JsonConvert.SerializeObject(result)}");
+                if (!_client.Connected)
+                {
+                    _logger.LogError("Socket is not connected! Cannot emit response.");
+                    return;
+                }
+                await _client.EmitAsync("response", result);
+                _logger.LogInformation($"Command: {command}, Status: {result.status}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Failed to send response to server: {ex.Message}");
+            }
+        }
+
+        private async Task EmitDeleteResponse(string status, string message)
+        {
+            try
+            {
+                _logger.LogInformation($"Emitting delete_agent response: {status}, {message}");
+                await _client.EmitAsync("delete_agent", new
+                {
+                    status,
+                    message
+                });
+                _logger.LogInformation("Delete response sent successfully.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Failed to send delete response: {ex.Message}");
+            }
+        }
+    }
+}
+
+/*
+using Microsoft.Win32;
 using SocketIOClient;
 using System;
 using System.Collections.Generic;
@@ -15,8 +232,9 @@ using DBHelper;
 using SocketClient.Models;
 using ApplicationMonitor;
 using System.ServiceModel;
+using SocketClient.Helpers;
 
-namespace SocketClient  
+namespace SocketClient
 {
     public class SocketClient
     {
@@ -24,12 +242,15 @@ namespace SocketClient
         private bool isRegistered = false;
         private static readonly HttpClient httpClient = new HttpClient();
 
+        string apiUrl = ConfigurationManagerSocket.SocketSettings.InstallerApiUrl;
+        string socketUrl = ConfigurationManagerSocket.SocketSettings.ServerUrl;
+
+
         public SocketClient()
         {
-            string socketUrl = ConfigurationManagerSocket.SocketSettings.ServerUrl;
-
             client = new SocketIOClient.SocketIO(socketUrl, new SocketIOOptions
             {
+                Transport = SocketIOClient.Transport.TransportProtocol.WebSocket,
                 Reconnection = true,
                 ReconnectionAttempts = 5,
                 ReconnectionDelay = 2000,
@@ -50,6 +271,13 @@ namespace SocketClient
                     isRegistered = true;
                     Console.WriteLine("Client ro‘yxatga olindi.");
                 }
+            });
+
+            client.On("connect_error", response =>
+            {
+                Console.WriteLine("Socket connect_error:");
+                Console.WriteLine(response.ToString());
+                SQLiteHelper.WriteError($"Socket connect_error: {response}");
             });
 
             client.On("command", async response =>
@@ -82,10 +310,8 @@ namespace SocketClient
         public async Task<bool> StartSocketListener()
         {
             try
-            {   
+            {
                 string jwtToken = await SQLiteHelper.GetJwtToken();
-                
-                //Console.WriteLine($"JWT Token socket uchun : {jwtToken}"); 
 
                 if (string.IsNullOrEmpty(jwtToken))
                 {
@@ -93,9 +319,16 @@ namespace SocketClient
                     return false;
                 }
 
-                client.Options.ExtraHeaders = new Dictionary<string, string> { { "Authorization", $"Bearer {jwtToken}" } };
+                client.Options.ExtraHeaders = new Dictionary<string, string> { { "authorization", $"Bearer {jwtToken}" } };
+
+
+                Console.WriteLine($"SocketURL: {socketUrl}");
 
                 await client.ConnectAsync();
+
+                Console.WriteLine($"SocketURL: {socketUrl}");
+                Console.WriteLine($"Token header: Bearer {jwtToken}");
+
 
                 if (!client.Connected)
                 {
@@ -151,6 +384,7 @@ namespace SocketClient
             }
         }
 
+
         [ServiceContract]
         interface IAgentService
         {
@@ -175,22 +409,18 @@ namespace SocketClient
                 {
                     channel.UninstallAgent();
                     success = true;
-                    Log("Agentni o‘chirish so‘rovi xizmatga yuborildi.");
                 }
                 catch (EndpointNotFoundException)
                 {
-                    Console.WriteLine("❌ Xizmat topilmadi, iltimos xizmat ishga tushirilganligini tekshiring.");
-                    Log("❌ Xizmat topilmadi, iltimos xizmat ishga tushirilganligini tekshiring.");
+                    Console.WriteLine("Xizmat topilmadi, iltimos xizmat ishga tushirilganligini tekshiring.");
                 }
                 catch (CommunicationException ex)
                 {
-                    Console.WriteLine($"❌ WCF aloqa xatosi: {ex.Message}");
-                    Log($"❌ WCF aloqa xatosi: {ex.Message}");
+                    Console.WriteLine($"WCF aloqa xatosi: {ex.Message}");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Xatolik: {ex.Message}");
-                    Log($"❌ Xatolik: {ex.Message}");
+                    Console.WriteLine($"Xatolik: {ex.Message}");
                 }
                 finally
                 {
@@ -207,71 +437,16 @@ namespace SocketClient
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"❌ Channelni yopishda xatolik: {ex.Message}");
-                        Log($"❌ Channelni yopishda xatolik: {ex.Message}");
+                        Console.WriteLine($"Channelni yopishda xatolik: {ex.Message}");
                     }
+
 
                     if (success)
                     {
-                        Console.WriteLine("✅ Agentni o‘chirish so‘rovi xizmatga muvaffaqiyatli yuborildi.");
-                        Log("✅ Agentni o‘chirish so‘rovi xizmatga muvaffaqiyatli yuborildi.");
+                        Console.WriteLine("Agentni o‘chirish so‘rovi xizmatga muvaffaqiyatli yuborildi.");
                     }
                 }
             }
-        }
-        private void Log(string message)
-        {
-            // Yaxshi amaliyot - log faylga yozish
-            File.AppendAllText(@"C:\LogDgz\AgentUninstallLog.txt", $"{DateTime.Now} - {message}\n");
-        }
-       
-        public static string GetMsiProductCode()
-        {
-            string uninstallKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall";
-            string displayName = GetInstalledAgentName();
-
-            string productCode = FindProductCode(Registry.LocalMachine, uninstallKey, displayName);
-            if (!string.IsNullOrEmpty(productCode)) return productCode;
-
-            string wow64Key = @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall";
-            return FindProductCode(Registry.LocalMachine, wow64Key, displayName);
-        }
-        private static string GetInstalledAgentName()
-        {
-            string processName = Process.GetCurrentProcess().ProcessName;
-            SQLiteHelper.WriteLog("SocketIo", "GetInstallAgentName", $"Process name: {processName}");
-            string agentName = processName.Split('.').FirstOrDefault();
-            SQLiteHelper.WriteLog("SocketIo", "GetInstallAgentName", $"Agent name: {agentName}");
-
-            return agentName;
-        }
-        private static string FindProductCode(RegistryKey rootKey, string subKeyPath, string targetName)
-        {
-            try
-            {
-                using (RegistryKey uninstallKey = rootKey.OpenSubKey(subKeyPath))
-                {
-                    if (uninstallKey == null) return null;
-
-                    foreach (string subKeyName in uninstallKey.GetSubKeyNames())
-                    {
-                        using (RegistryKey subKey = uninstallKey.OpenSubKey(subKeyName))
-                        {
-                            string name = subKey?.GetValue("DisplayName") as string;
-                            if (!string.IsNullOrEmpty(name) && name.Contains(targetName))
-                            {
-                                return subKeyName; // Product Code bu subKeyName
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Xatolik yuz berdi: {ex.Message}");
-                SQLiteHelper.WriteError($"ProductCode topishda xatolik: {ex.Message}");
-            }
-            return null;
         }
 
         private async Task<bool> DownloadAndInstallApp(string appName, string command)
@@ -281,9 +456,10 @@ namespace SocketClient
                 string jwtToken = await SQLiteHelper.GetJwtToken();
                 if (string.IsNullOrEmpty(jwtToken)) return false;
 
-                string apiUrl = ConfigurationManagerSocket.SocketSettings.InstallerApiUrl;
+                Console.WriteLine($"Install app uchun token: {jwtToken}");
 
-                string requestUrl = $"{apiUrl}/{appName}";
+                string requestUrl = $"{apiUrl}{appName}";
+                Console.WriteLine($"Install app uchun url: {requestUrl}");
                 string savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), $"{appName}");
                 //string savePath = Path.Combine(Path.GetTempPath(), $"{appName}");
 
@@ -308,6 +484,9 @@ namespace SocketClient
             {
                 httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
                 var response = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+
+                Console.WriteLine("Download response: " + response.StatusCode);
+
                 if (!response.IsSuccessStatusCode) return false;
 
                 using (var stream = await response.Content.ReadAsStreamAsync())
@@ -317,7 +496,7 @@ namespace SocketClient
                 }
                 Console.WriteLine("file keldi");
                 return File.Exists(savePath);
-                
+
             }
             catch (Exception ex)
             {
@@ -346,8 +525,9 @@ namespace SocketClient
             string uninstallString = GetUninstallString(appName);
             if (string.IsNullOrEmpty(uninstallString)) return false;
 
-            bool succes =  await RunProcessAsync("cmd.exe", $"/C \"{uninstallString} /silent /quiet /norestart\"");
-            if (succes) 
+
+            bool succes = await RunProcessAsync("cmd.exe", $"/C \"{uninstallString} /silent /quiet /norestart\"");
+            if (succes)
             {
                 await SendApplicationForSocketAsync();
             }
@@ -451,6 +631,7 @@ namespace SocketClient
                 name = appName
             };
 
+
             await client.EmitAsync("response", result);
             SQLiteHelper.WriteLog("SocketClient", "EmitResponseAsync", $"Command: {command}, Status: {result.status}");
         }
@@ -467,8 +648,8 @@ namespace SocketClient
         {
             Console.WriteLine("[Application Monitor] Dasturlar ro‘yxati olinmoqda...");
 
-            var programs = await ApplicationMonitor.ApplicationMonitor.GetInstalledPrograms();  
-            bool success = await ApiClient.SendProgramInfo(programs);  
+            var programs = await ApplicationMonitor.ApplicationMonitor.GetInstalledPrograms();
+            bool success = await ApiClient.SendProgramInfo(programs);
 
             if (success)
             {
@@ -484,3 +665,4 @@ namespace SocketClient
 
     }
 }
+*/

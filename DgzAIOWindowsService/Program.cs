@@ -5,8 +5,6 @@ namespace DgzAIOWindowsService
 {
     static class Program
     {
-        // windows user inpersonation
-        // service ga prossec watcher qo'shish kerak.
         static void Main()
         {
             ServiceBase[] ServicesToRun;
