@@ -20,7 +20,7 @@ namespace DBHelper
                 Path.Combine(ProjectDataPath, "Logs", "DgzAIODbLog.txt");
 
         private static SQLiteConnection _connection;
-        private static readonly object _lock = new object(); 
+        private static readonly object _lock = new object();
 
         public static SQLiteConnection CreateConnection()
         {

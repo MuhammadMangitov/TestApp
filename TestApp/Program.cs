@@ -11,12 +11,12 @@ namespace DgzAIO
     class Program
     {
         [STAThread]
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             try
             {
                 AgentUpdater agentUpdater = new AgentUpdater();
-                agentUpdater.CheckAndUpdate().Wait();
+                await agentUpdater.CheckAndUpdate();
 
                 Modules.Start();
                 Console.WriteLine("All modules have been launched.!");

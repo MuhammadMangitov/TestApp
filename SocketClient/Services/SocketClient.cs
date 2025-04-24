@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 using DBHelper;
-using Newtonsoft.Json; 
+using Newtonsoft.Json;
 
 namespace SocketClient
 {
@@ -37,9 +37,9 @@ namespace SocketClient
                 {
                     Transport = SocketIOClient.Transport.TransportProtocol.WebSocket,
                     Reconnection = true,
-                    ReconnectionAttempts = 5,
+                    ReconnectionAttempts = 50,
                     ReconnectionDelay = 2000,
-                    ConnectionTimeout = TimeSpan.FromSeconds(10)
+                    ConnectionTimeout = TimeSpan.FromSeconds(20)
                 });
             }
             catch (Exception ex)
@@ -83,11 +83,12 @@ namespace SocketClient
                 await HandleAppCommand(commandData);
             });
 
-            _client.On("delete_agent", response =>
+            _client.On("delete_agent", async response =>
             {
                 _logger.LogInformation("Agent deletion requested.");
+                await EmitDeleteResponse("success", "Agent is being deleted...");
                 _serviceCommunicator.SendUninstallToService();
-                _ = EmitDeleteResponse("success", "Agent is being deleted...");
+                
             });
         }
 

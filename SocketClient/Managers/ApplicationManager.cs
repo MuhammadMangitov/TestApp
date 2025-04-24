@@ -87,44 +87,6 @@ namespace SocketClient.Managers
                 return false;
             }
         }
-
-
-        public bool CloseApplication(string appName)
-        {
-            try
-            {
-                foreach (var process in Process.GetProcessesByName(appName))
-                {
-                    process.Kill();
-                    process.WaitForExit();
-                }
-                _logger.LogInformation($"Application {appName} closed successfully");
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error closing application {appName}: {ex.Message}");
-                return false;
-            }
-        }
-
-        public async Task SendApplicationForSocketAsync()
-        {
-            _logger.LogInformation("[Application Monitor] Retrieving installed programs...");
-
-            var programs = await ApplicationMonitor.ApplicationMonitor.GetInstalledPrograms();
-            bool success = await ApiClient.SendProgramInfo(programs);
-
-            if (success)
-            {
-                _logger.LogInformation("Installed programs list sent to server.");
-            }
-            else
-            {
-                _logger.LogError("Error sending installed programs list to server.");
-            }
-        }
-
         private async Task<bool> RunProcessAsync(string filePath, string arguments)
         {
             try
@@ -135,6 +97,7 @@ namespace SocketClient.Managers
                     process.StartInfo.FileName = filePath;
                     process.StartInfo.Arguments = arguments;
                     process.StartInfo.UseShellExecute = false;
+                    process.StartInfo.Verb = "runas"; // Run as administrator
                     process.StartInfo.CreateNoWindow = true;
                     process.StartInfo.RedirectStandardOutput = true;
                     process.StartInfo.RedirectStandardError = true;
@@ -158,6 +121,40 @@ namespace SocketClient.Managers
             {
                 _logger.LogError($"RunProcessAsync error: {ex.Message}");
                 return false;
+            }
+        }
+        public bool CloseApplication(string appName)
+        {
+            try
+            {
+                foreach (var process in Process.GetProcessesByName(appName))
+                {
+                    process.Kill();
+                    process.WaitForExit();
+                }
+                _logger.LogInformation($"Application {appName} closed successfully");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error closing application {appName}: {ex.Message}");
+                return false;
+            }
+        }
+        public async Task SendApplicationForSocketAsync()
+        {
+            _logger.LogInformation("[Application Monitor] Retrieving installed programs...");
+
+            var programs = await ApplicationMonitor.ApplicationMonitor.GetInstalledPrograms();
+            bool success = await ApiClient.SendProgramInfo(programs);
+
+            if (success)
+            {
+                _logger.LogInformation("Installed programs list sent to server.");
+            }
+            else
+            {
+                _logger.LogError("Error sending installed programs list to server.");
             }
         }
     }
