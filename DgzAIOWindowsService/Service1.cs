@@ -38,10 +38,8 @@ namespace DgzAIOWindowsService
             workerThread = new Thread(MonitorAndStartDgzAIO) { IsBackground = true };
             workerThread.Start();
 
-            Logger.Log("Xizmat va WCF ishga tushdi.");
+            Logger.Log("The service and WCF are up and running.");
         }
-
-
         private void MonitorAndStartDgzAIO()
         {
             while (isRunning)
@@ -52,12 +50,12 @@ namespace DgzAIOWindowsService
                     if (processes.Length == 0)
                     {
                         StartDgzAIO();
-                        Logger.Log("DgzAIO qayta ishga tushirildi.");
+                        Logger.Log("DgzAIO has been restarted.");
                     }
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError($"Monitoring xatoligi: {ex.Message}");
+                    Logger.LogError($"Monitoring error: {ex.Message}");
                 }
 
                 Thread.Sleep(5000);
@@ -71,7 +69,7 @@ namespace DgzAIOWindowsService
             {
                 if (!File.Exists(exePath))
                 {
-                    Logger.LogError($"DgzAIO.exe topilmadi: {exePath}");
+                    Logger.LogError($"DgzAIO.exe not found: {exePath}");
                     return;
                 }
 
@@ -87,7 +85,7 @@ namespace DgzAIOWindowsService
             }
             catch (Exception ex)
             {
-                Logger.LogError($"DgzAIO ishga tushirish xatoligi: {ex.Message}");
+                Logger.LogError($"DgzAIO startup error: {ex.Message}");
             }
         }
 
@@ -102,7 +100,7 @@ namespace DgzAIOWindowsService
             if (serviceHost != null)
                 serviceHost.Close();
 
-            Logger.Log("Xizmat to‘xtadi.");
+            Logger.Log("Service stopped.");
         }
 
     }

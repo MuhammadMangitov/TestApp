@@ -96,7 +96,6 @@ namespace ApplicationMonitor
             }
         }
 
-
         private static async Task<double?> GetProgramSizeSmartAsync(string programName, string installLocation, object registrySize)
         {
             if (registrySize != null)
