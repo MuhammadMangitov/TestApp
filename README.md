@@ -8,5 +8,5 @@
 # DgzAIOWindowsService -> The agent ensures that it updates itself, has a self-destructing , and that the agent works properly.
 # SocketClient -> It ensures that the socket is connected and that the socket is not disconnected, receives commands from the socket and executes them, and sends the necessary commands to the Windows service.
 # TestApp(DgzAIO) -> TestApp is our main DgzAIO.exe, where all the logic is collected and the execution sequence is controlled.
-# UpdaterAgent -> UpdaterAgent will prepare a zip and .json for the new version, taking into account the new changes.
+# UpdateMaker -> UpdaterAgent will prepare a zip and .json for the new version, taking into account the new changes.
 
