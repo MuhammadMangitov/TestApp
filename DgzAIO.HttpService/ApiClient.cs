@@ -64,6 +64,7 @@ namespace DgzAIO.HttpService
             {
                 var json = JsonConvert.SerializeObject(data);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
+                
 
                 var token = await DBHelper.SQLiteHelper.GetJwtToken();
                 if (!string.IsNullOrEmpty(token))
@@ -103,6 +104,7 @@ namespace DgzAIO.HttpService
         public static async Task<bool> SendProgramInfo(List<ProgramDetails> programs)
         {
             //Console.WriteLine($"Computers info: {JsonConvert.SerializeObject(programs)}");
+            SQLiteHelper.WriteLog($"s", "s", $"Sending data to {BaseUrlForApps}: {programs.Count}");
             return await SendData(BaseUrlForApps, programs);
         }
 

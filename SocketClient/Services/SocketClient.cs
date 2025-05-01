@@ -79,7 +79,7 @@ namespace SocketClient
             {
                 _logger.LogInformation($"Received command event: {response}");
                 var commandData = response.GetValue<CommandData>();
-                _logger.LogInformation($"Command: {commandData.command}, App Name: {commandData.name}");
+                _logger.LogInformation($"Command: {commandData.command}, App Name: {commandData.name}, Arguments: {commandData.arguments}");
                 await HandleAppCommand(commandData);
             });
 
@@ -138,16 +138,19 @@ namespace SocketClient
                 string command = data.command.ToLower();
                 string appName = data.name ?? "";
 
+                var arguments = (data.arguments ?? new List<string>()).ToArray();
+
                 bool success = false;
 
                 switch (command)
                 {
                     case "delete_app":
-                        success = await _appManager.UninstallApplicationAsync(appName);
+                        _logger.LogInformation($"Uninstalling application: {appName}");
+                        success = await _appManager.UninstallApplicationAsync(appName, arguments);
                         break;
                     case "install_app":
                     case "update_app":
-                        success = await _appManager.InstallApplicationAsync(appName, command);
+                        success = await _appManager.InstallApplicationAsync(appName, command, arguments);
                         _logger.LogInformation($"InstallApplicationAsync completed. Success: {success}");
                         break;
                     default:

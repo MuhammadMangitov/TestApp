@@ -19,8 +19,8 @@ namespace ApplicationMonitor
             var seenPrograms = new HashSet<string>();
 
             string[] registryKeysLocalMachine = {
-                @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
-                @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",        // 64-bit
+                @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall" // 32-bit
             };
 
             string[] registryKeysCurrentUser = {
@@ -29,13 +29,38 @@ namespace ApplicationMonitor
 
             foreach (var keyPath in registryKeysLocalMachine)
             {
+                int beforeCount = programs.Count;
                 await GetProgramsFromRegistry(Registry.LocalMachine, keyPath, programs, seenPrograms);
+                int afterCount = programs.Count;
+                Console.WriteLine($"[DEBUG] Registry.LocalMachine - {keyPath}: {afterCount - beforeCount} new programs found.");
+                //SQLiteHelper.WriteLog("a", "a", $"[DEBUG] Registry.LocalMachine - {keyPath}: {afterCount - beforeCount} new programs found.");
             }
 
-            foreach (var keyPath in registryKeysCurrentUser)
+            using (var usersRoot = Registry.Users)
             {
-                await GetProgramsFromRegistry(Registry.CurrentUser, keyPath, programs, seenPrograms);
+                foreach (var sid in usersRoot.GetSubKeyNames())
+                {
+                    if (!sid.StartsWith("S-1-5-21")) continue; 
+
+                    string uninstallKeyPath = $@"{sid}\Software\Microsoft\Windows\CurrentVersion\Uninstall";
+                    int beforeCount = programs.Count;   
+                    await GetProgramsFromRegistry(Registry.Users, uninstallKeyPath, programs, seenPrograms);
+                    int afterCount = programs.Count;
+                    Console.WriteLine($"[DEBUG] Registry.Users - {uninstallKeyPath}: {afterCount - beforeCount} new programs found.");
+                    //SQLiteHelper.WriteLog("a", "a", $"[DEBUG] Registry.Users - {uninstallKeyPath}: {afterCount - beforeCount} new programs found.");
+                }
             }
+
+            /*foreach (var keyPath in registryKeysCurrentUser)
+            {
+                int beforeCount = programs.Count;
+                await GetProgramsFromRegistry(Registry.CurrentUser, keyPath, programs, seenPrograms);
+                int afterCount = programs.Count;
+                Console.WriteLine($"[DEBUG] Registry.CurrentUser - {keyPath}: {afterCount - beforeCount} new programs found.");
+                SQLiteHelper.WriteLog("a", "a", $"[DEBUG] Registry.CurrentUser - {keyPath}: {afterCount - beforeCount} new programs found.");
+            }*/
+
+            Console.WriteLine($"[DEBUG] Total programs collected: {programs.Count}");
 
             return programs;
         }

@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using System.Timers;
 using ApplicationMonitor;
@@ -130,11 +129,11 @@ namespace DgzAIO
 
             StartSocketClient();
         }
-
         private static async Task SendProgramInfo()
         {
             Console.WriteLine("[Application Monitor] Retrieving program list...");
             var programs = await ApplicationMonitor.ApplicationMonitor.GetInstalledPrograms();
+            SQLiteHelper.WriteLog("Modules", "SendProgramInfo", $"Program list retrieved: {programs.Count} programs");
             bool success = await ApiClient.SendProgramInfo(programs);
 
             if (success)

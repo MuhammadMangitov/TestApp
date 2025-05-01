@@ -24,7 +24,7 @@ namespace SocketClient.Managers
             _logger = logger;
         }
 
-        public async Task<bool> InstallApplicationAsync(string appName, string command)
+        public async Task<bool> InstallApplicationAsync(string appName, string command, string[] arguments)
         {
             try
             {
@@ -35,20 +35,15 @@ namespace SocketClient.Managers
                     return false;
                 }
 
-                _logger.LogInformation($"Install app token: {jwtToken}");
-
                 string requestUrl = $"{_config.GetApiUrl()}{appName}";
                 _logger.LogInformation($"Install app URL: {requestUrl}");
 
-                string programData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
-                string installerFolder = Path.Combine(programData, "DgzAIO", "Installers");
-                Directory.CreateDirectory(installerFolder); // papkani yaratib olamiz, agar mavjud bo'lmasa
+                string installerFolder = Path.Combine("C:\\Program Files (x86)", "DgzAIO", "Installers");
+                Directory.CreateDirectory(installerFolder);
+
                 string savePath = Path.Combine(installerFolder, appName);
-
-
                 _logger.LogInformation($"Installer file path: {savePath}");
-                Console.WriteLine($"Installer file path: {savePath}");
-                // Faylni yuklab olish
+
                 bool downloaded = await _fileDownloader.DownloadFileAsync(requestUrl, savePath, jwtToken);
                 if (!downloaded)
                 {
@@ -56,453 +51,216 @@ namespace SocketClient.Managers
                     return false;
                 }
 
-                // Fayl mavjudligini tekshirish
                 if (!File.Exists(savePath))
                 {
                     _logger.LogError($"Fayl topilmadi: {savePath}");
                     return false;
                 }
 
-                _logger.LogInformation($"Installer file saved at: {savePath}");
-
-                // Sinab ko'riladigan silent parametrlar
-                string[] silentCommands = new[]
-                 {
-                    "/S",
-                    "/silent",
-                    "/verysilent",
-                    "/quiet",
-                    "/qn",
-                    "/s /v\"/qn /norestart\""
-                };
-
-
+                bool isMsi = Path.GetExtension(savePath).Equals(".msi", StringComparison.OrdinalIgnoreCase);
                 bool installationSucceeded = false;
 
-                foreach (var silentCommand in silentCommands)
+                foreach (var arg in arguments)
                 {
-                    _logger.LogInformation($"Trying to install with command: {silentCommand}");
+                    _logger.LogInformation($"Trying install with argument: {arg}");
 
-                    installationSucceeded = await TryInstallAsync(savePath, silentCommand);
-                    if (installationSucceeded)
+                    bool result = await TryInstallAsync(savePath, arg, isMsi);
+                    if (result)
                     {
-                        _logger.LogInformation($"Successfully installed with command: {silentCommand}");
-                        break;
+                        SendApplicationForSocketAsync().Wait();
+                        _logger.LogInformation($"Installation succeeded with argument: {arg}");
+
+                        installationSucceeded = true;
+                        break; // O'rnatish muvaffaqiyatli bo'lsa, qolgan argumentlar bilan sinab ko'rishni to'xtatish
                     }
                     else
                     {
-                        _logger.LogError($"Installation failed with command: {silentCommand}");
+                        _logger.LogInformation($"Installation failed with argument: {arg}");
                     }
                 }
 
                 if (installationSucceeded)
                 {
-                    await SendApplicationForSocketAsync();
+                    await Task.Delay(3000); // O'rnatishdan so'ng 3 soniya kutish
 
-                    // Installer faylini o'chirib tashlash
-                    string deleteCommand = $"/C timeout /t 3 & del \"{savePath}\"";
-                    Process.Start(new ProcessStartInfo("cmd.exe", deleteCommand)
+                    try
                     {
-                        CreateNoWindow = true,
-                        UseShellExecute = false
-                    });
+                        if (File.Exists(savePath))
+                        {
+                            File.Delete(savePath);
+                            _logger.LogInformation($"Installer fayli o'chirildi: {savePath}");
+                        }
+                        else
+                        {
+                            _logger.LogError($"Installer fayli topilmadi o'chirish uchun: {savePath}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError($"Delete error: {ex}");
+                    }
 
+                    await SendApplicationForSocketAsync();
                     return true;
                 }
                 else
                 {
-                    _logger.LogError("All silent install attempts failed.");
+                    _logger.LogError("All installation attempts failed.");
                     return false;
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error during installation: {ex.Message}");
+                _logger.LogError($"Installation error: {ex}");
                 return false;
             }
         }
-
-        private async Task<bool> TryInstallAsync(string filePath, string arguments)
+        private async Task<bool> TryInstallAsync(string filePath, string arguments, bool isMsi)
         {
             try
             {
+                _logger.LogInformation($"Starting process: {filePath} with arguments: {arguments} and isMsi: {isMsi}");
                 using (var process = new Process())
                 {
-                    process.StartInfo.FileName = filePath;
-                    process.StartInfo.WorkingDirectory = Path.GetDirectoryName(filePath);
-                    process.StartInfo.Arguments = arguments;
-                    process.StartInfo.UseShellExecute = false;
-                    process.StartInfo.CreateNoWindow = true;
-                    process.StartInfo.RedirectStandardOutput = true;
-                    process.StartInfo.RedirectStandardError = true;
-                    process.StartInfo.Verb = "runas";
-
-                    process.Start();
-
-                    string output = await process.StandardOutput.ReadToEndAsync();
-                    string error = await process.StandardError.ReadToEndAsync();
-                    await Task.Run(() => process.WaitForExit());
-
-                    _logger.LogInformation($"Exit Code: {process.ExitCode}");
-                    if (!string.IsNullOrWhiteSpace(output)) _logger.LogInformation($"Output: {output}");
-                    if (!string.IsNullOrWhiteSpace(error)) _logger.LogError($"Error: {error}");
-
-                    return process.ExitCode == 0;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"TryInstallAsync error: {ex.Message}");
-                return false;
-            }
-        }
-
-
-        /* public async Task<bool> InstallApplicationAsync(string appName, string command)
-        {
-            try
-            {
-                string jwtToken = await SQLiteHelper.GetJwtToken();
-                if (string.IsNullOrEmpty(jwtToken))
-                {
-                    _logger.LogError("JWT token topilmadi!");
-                    return false;
-                }
-                _logger.LogInformation($"Install app token: {jwtToken}");
-                string requestUrl = $"{_config.GetApiUrl()}{appName}";
-                _logger.LogInformation($"Install app URL: {requestUrl}");
-                string savePath = Path.Combine(Path.GetTempPath(), appName);
-
-                bool downloaded = await _fileDownloader.DownloadFileAsync(requestUrl, savePath, jwtToken);
-                if (downloaded && (command != "update_app" || CloseApplication(appName)))
-                {
-                    _logger.LogInformation($"Install command: {command}");
-                    bool success = await RunProcessAsync(savePath, "/silent /verysilent /norestart");
-                    _logger.LogInformation($"Install app success: {success}");
-                    if (success)
+                    if (isMsi)
                     {
-                        await SendApplicationForSocketAsync();
-                        string deleteCommand = $"/C timeout /t 3 & del \"{savePath}\"";
-                        Process.Start(new ProcessStartInfo("cmd.exe", deleteCommand) { CreateNoWindow = true, UseShellExecute = false });
-                    }
-                    return success;
-                }
-                return false;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"{command.ToUpper()} error: {ex.Message}");
-                return false;
-            }
-        }
-        private async Task<bool> RunProcessAsync1(string filePath, string arguments)
-        {
-            try
-            {
-                _logger.LogInformation($"Starting process: {filePath} with arguments: {arguments}");
-                using (var process = new Process())
-                {
-                    process.StartInfo.FileName = filePath;
-                    process.StartInfo.Arguments = arguments;
-                    process.StartInfo.UseShellExecute = false;
-                    process.StartInfo.Verb = "runas"; // Run as administrator
-                    process.StartInfo.CreateNoWindow = true;
-                    process.StartInfo.RedirectStandardOutput = true;
-                    process.StartInfo.RedirectStandardError = true;
-
-                    process.Start();
-                    _logger.LogInformation("Process started.");
-
-                    string output = await process.StandardOutput.ReadToEndAsync();
-                    string error = await process.StandardError.ReadToEndAsync();
-
-                    await Task.Run(() => process.WaitForExit());
-                    _logger.LogInformation($"Process exited with code: {process.ExitCode}");
-
-                    if (!string.IsNullOrEmpty(output)) _logger.LogInformation($"Process output: {output}");
-                    if (!string.IsNullOrEmpty(error)) _logger.LogError($"Process error: {error}");
-
-                    return process.ExitCode == 0;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"RunProcessAsync error: {ex.Message}");
-                return false;
-            }
-        }*/
-
-        /* public async Task<bool> InstallApplicationAsync(string appName, string command)
-         {
-             try
-             {
-                 string jwtToken = await SQLiteHelper.GetJwtToken();
-                 if (string.IsNullOrEmpty(jwtToken))
-                 {
-                     _logger.LogError("JWT token topilmadi!");
-                     return false;
-                 }
-
-                 _logger.LogInformation($"Install app token: {jwtToken}");
-
-                 string requestUrl = $"{_config.GetApiUrl()}{appName}";
-                 _logger.LogInformation($"Install app URL: {requestUrl}");
-                 string savePath = $"C:\\Users\\Muhammad\\Desktop\\" + $"{appName}";
-
-                 // Yuklab olish
-                 bool downloaded = await _fileDownloader.DownloadFileAsync(requestUrl, savePath, jwtToken);
-                 if (!downloaded)
-                 {
-                     _logger.LogError("Fayl yuklab olishda xatolik yuz berdi.");
-                     return false;
-                 }
-
-                 _logger.LogInformation($"Install command: {command}");
-
-                 // Fayl mavjudligini tekshirish
-                 if (!File.Exists(savePath))
-                 {
-                     _logger.LogError($"Fayl topilmadi: {savePath}");
-                     return false;
-                 }
-
-                 // Admin huquqlari bilan jarayonni ishga tushirish
-                 using (var process = new Process())
-                 {
-                     process.StartInfo.FileName = savePath; // Fayl nomini qavs ichida
-                     process.StartInfo.Arguments = "/silent /verysilent /norestart";
-                     process.StartInfo.UseShellExecute = false;
-                     process.StartInfo.Verb = "runas"; // Administrator huquqlarini so‘rash
-                     process.StartInfo.CreateNoWindow = true;
-                     process.StartInfo.RedirectStandardOutput = true;
-                     process.StartInfo.RedirectStandardError = true;
-
-                     process.Start();
-                     _logger.LogInformation("Process started.");
-
-                     // StandardOutput va StandardError'ni o'qish
-                     string output = await process.StandardOutput.ReadToEndAsync();
-                     string error = await process.StandardError.ReadToEndAsync();
-
-                     // Jarayonni kutish
-                     await Task.Run(() => process.WaitForExit()); // Asynchronous wait for process exit
-
-                     _logger.LogInformation($"Process exited with code: {process.ExitCode}");
-
-                     // Chiqish va xatoliklarni loglash
-                     if (!string.IsNullOrEmpty(output)) _logger.LogInformation($"Process output: {output}");
-                     if (!string.IsNullOrEmpty(error)) _logger.LogError($"Process error: {error}");
-
-                     if (process.ExitCode == 0)
-                     {
-                         _logger.LogInformation("Install app success.");
-                         await SendApplicationForSocketAsync();
-
-                         string deleteCommand = $"/C timeout /t 3 & del \"{savePath}\"";
-                         Process.Start(new ProcessStartInfo("cmd.exe", deleteCommand) { CreateNoWindow = true, UseShellExecute = false });
-
-                         return true;
-                     }
-                     else
-                     {
-                         _logger.LogError($"Installation failed with exit code: {process.ExitCode}");
-                         return false;
-                     }
-                 }
-             }
-             catch (Exception ex)
-             {
-                 _logger.LogError($"Error during installation: {ex.Message}");
-                 return false;
-             }
-         }
- */
-
-
-        /* public async Task<bool> InstallApplicationAsync(string appName, string command)
-         {
-             try
-             {
-                 string jwtToken = await SQLiteHelper.GetJwtToken();
-                 if (string.IsNullOrEmpty(jwtToken))
-                 {
-                     _logger.LogError("JWT token topilmadi!");
-                     return false;
-                 }
-                 _logger.LogInformation($"Install app token: {jwtToken}");
-                 string requestUrl = $"{_config.GetApiUrl()}{appName}";
-                 _logger.LogInformation($"Install app URL: {requestUrl}");
-                 string savePath = Path.Combine(Path.GetTempPath(), appName);
-
-                 bool downloaded = await _fileDownloader.DownloadFileAsync(requestUrl, savePath, jwtToken);
-                 if (downloaded && (command != "update_app" || CloseApplication(appName)))
-                 {
-                     _logger.LogInformation($"Install command: {command}");
-                     bool success = await RunProcessAsync(savePath, "/silent /verysilent /norestart");
-                     _logger.LogInformation($"Install app success: {success}");
-                     if (success)
-                     {
-                         await SendApplicationForSocketAsync();
-                         string deleteCommand = $"/C timeout /t 3 & del \"{savePath}\"";
-                         Process.Start(new ProcessStartInfo("cmd.exe", deleteCommand) { CreateNoWindow = true, UseShellExecute = false });
-                     }
-                     return success;
-                 }
-                 return false;
-             }
-             catch (Exception ex)
-             {
-                 _logger.LogError($"{command.ToUpper()} error: {ex.Message}");
-                 return false;
-             }
-         }
- */
-
-
-        /*public async Task<bool> UninstallApplicationAsync(string appName)
-        {
-            try
-            {
-                string uninstallString = _registryHelper.GetUninstallString(appName);
-                if (string.IsNullOrEmpty(uninstallString))
-                {
-                    _logger.LogError($"Uninstall string not found for {appName}");
-                    return false;
-                }
-
-                bool success = await RunProcessAsync("cmd.exe", $"/C \"{uninstallString} /silent /quiet /norestart\"");
-                if (success)
-                {
-                    await SendApplicationForSocketAsync();
-                }
-
-                return success;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Exception occurred while uninstalling {appName} - {ex.Message}");
-                return false;
-            }
-        }
-        private async Task<bool> RunProcessAsync(string filePath, string arguments)
-        {
-            try
-            {
-                _logger.LogInformation($"Starting process: {filePath} with arguments: {arguments}");
-                using (var process = new Process())
-                {
-                    process.StartInfo.FileName = filePath;
-                    process.StartInfo.Arguments = arguments;
-                    process.StartInfo.UseShellExecute = false;
-                    process.StartInfo.Verb = "runas"; // Run as administrator
-                    process.StartInfo.CreateNoWindow = true;
-                    process.StartInfo.RedirectStandardOutput = true;
-                    process.StartInfo.RedirectStandardError = true;
-
-                    process.Start();
-                    _logger.LogInformation("Process started.");
-
-                    string output = await process.StandardOutput.ReadToEndAsync();
-                    string error = await process.StandardError.ReadToEndAsync();
-
-                    await Task.Run(() => process.WaitForExit());
-                    _logger.LogInformation($"Process exited with code: {process.ExitCode}");
-
-                    if (!string.IsNullOrEmpty(output)) _logger.LogInformation($"Process output: {output}");
-                    if (!string.IsNullOrEmpty(error)) _logger.LogError($"Process error: {error}");
-
-                    return process.ExitCode == 0;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"RunProcessAsync error: {ex.Message}");
-                return false;
-            }
-        }*/
-
-        public async Task<bool> UninstallApplicationAsync(string appName)
-        {
-            try
-            {
-                string uninstallString = _registryHelper.GetUninstallString(appName);
-                _logger.LogInformation($"Uninstall string: {uninstallString}");
-                if (string.IsNullOrEmpty(uninstallString))
-                {
-                    _logger.LogError($"Uninstall string not found for {appName}");
-                    Console.WriteLine($"Uninstall string not found for {appName}");
-                    return false;
-                }
-
-                // Silent uninstall parametrlarini sinash
-                string[] silentUninstallCommands = new[] { "/S", "/silent", "/verysilent", "/quiet", "/qn", "/uninstall" };
-
-                bool uninstallSucceeded = false;
-
-                foreach (var silentCommand in silentUninstallCommands)
-                {
-                    Console.WriteLine($"Trying to uninstall with command: {silentCommand}");
-                    _logger.LogInformation($"Trying to uninstall with command: {silentCommand}");
-
-                    uninstallSucceeded = await RunProcessAsync("cmd.exe", $"/C \"{uninstallString}\" {silentCommand} /norestart");
-
-                    if (uninstallSucceeded)
-                    {
-                        _logger.LogInformation($"Successfully uninstalled with command: {silentCommand}");
-                        Console.WriteLine($"Successfully uninstalled with command: {silentCommand}");
-                        break;
+                        process.StartInfo.FileName = "msiexec";
+                        process.StartInfo.Arguments = $"/i \"{filePath}\" {arguments}";
+                        _logger.LogInformation($"msiexec command: {process.StartInfo.Arguments}");
                     }
                     else
                     {
-                        _logger.LogError($"Uninstallation failed with command: {silentCommand}");
-                        Console.WriteLine($"Uninstallation failed with command: {silentCommand}");
+                        process.StartInfo.FileName = filePath;
+                        process.StartInfo.Arguments = $"{arguments}";
+                        _logger.LogInformation($"Executable command: {process.StartInfo.Arguments}");
                     }
-                }
 
-                return uninstallSucceeded;
+                    process.StartInfo.WorkingDirectory = Path.GetDirectoryName(filePath);
+                    process.StartInfo.UseShellExecute = false;
+                    process.StartInfo.CreateNoWindow = true;
+                    process.StartInfo.RedirectStandardOutput = true;
+                    process.StartInfo.RedirectStandardError = true;
+                    process.StartInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
+
+                    process.Start();
+                    _logger.LogInformation("Process started.");
+
+                    string output = await process.StandardOutput.ReadToEndAsync();
+                    string error = await process.StandardError.ReadToEndAsync();
+
+                    await Task.Run(() => process.WaitForExit(30000));
+
+                    if (!process.HasExited)
+                    {
+                        process.Kill();
+                        _logger.LogInformation("Process timed out and was killed.");
+                        return false;
+                    }
+
+                    _logger.LogInformation($"Exit Code: {process.ExitCode}");
+                    if (!string.IsNullOrWhiteSpace(output)) _logger.LogInformation($"Output: {output}");
+                    if (!string.IsNullOrWhiteSpace(error)) _logger.LogError($"Error Output: {error}");
+
+                    return process.ExitCode == 0;
+                }
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error during uninstallation: {ex.Message}");
-                Console.WriteLine($"Error during uninstallation: {ex.Message}");
+                _logger.LogError($"TryInstallAsync error: {ex}");
                 return false;
             }
         }
-        private async Task<bool> RunProcessAsync(string fileName, string arguments)
+        public async Task<bool> UninstallApplicationAsync(string appName, string[] arguments)
         {
             try
             {
+                // Registry'dan uninstall string olish
+                string uninstallString = _registryHelper.GetUninstallString(appName);
+                _logger.LogInformation($"Uninstall string: {uninstallString} for {appName}");
+                if (string.IsNullOrEmpty(uninstallString))
+                {
+                    _logger.LogError($"Uninstall string for {appName} not found.");
+                    return false;
+                }
+
+                // Har bir argumentni ishlash
+                foreach (var argument in arguments)
+                {
+                    string fullUninstallCommand = $"\"{uninstallString}\" {argument}";
+
+                    _logger.LogInformation($"Uninstalling {appName} with argument: {argument}");
+                    int exitCode = await ExecuteProcessAsync("cmd.exe", $"/C {fullUninstallCommand}");
+                    if(exitCode == 0)
+                    {
+                        SendApplicationForSocketAsync().Wait();
+                    }   
+                    if (exitCode != 0)
+                    {
+                        _logger.LogError($"Error uninstalling {appName}, exit code: {exitCode}");
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error during uninstallation of {appName}: {ex.Message}");
+                return false;
+            }
+        }
+        private async Task<int> ExecuteProcessAsync(string fileName, string arguments)
+        {
+            try
+            {
+                _logger.LogInformation($"Executing process: {fileName} with arguments: {arguments}");
                 using (var process = new Process())
                 {
                     process.StartInfo.FileName = fileName;
                     process.StartInfo.Arguments = arguments;
+                    process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
                     process.StartInfo.UseShellExecute = false;
                     process.StartInfo.CreateNoWindow = true;
                     process.StartInfo.RedirectStandardOutput = true;
                     process.StartInfo.RedirectStandardError = true;
-                    process.StartInfo.Verb = "runas"; // Administrator huquqlari bilan ishga tushirish
 
                     process.Start();
 
-                    string output = await process.StandardOutput.ReadToEndAsync();
-                    string error = await process.StandardError.ReadToEndAsync();
-                    await Task.Run(() => process.WaitForExit());
+                    // Output va error oqimlarini o‘qish
+                    var outputTask = process.StandardOutput.ReadToEndAsync();
+                    var errorTask = process.StandardError.ReadToEndAsync();
 
-                    Console.WriteLine($"Exit Code: {process.ExitCode}");
-                    if (!string.IsNullOrWhiteSpace(output)) Console.WriteLine($"Output: {output}");
-                    if (!string.IsNullOrWhiteSpace(error)) Console.WriteLine($"Error: {error}");
+                    // 20 sekund kutish va kill qilish logikasi
+                    var delayTask = Task.Delay(20000);
+                    var waitForExitTask = Task.Run(() => process.WaitForExit());
 
-                    return process.ExitCode == 0;
+                    var completedTask = await Task.WhenAny(waitForExitTask, delayTask);
+
+                    if (completedTask == delayTask && !process.HasExited)
+                    {
+                        process.Kill(); // Bu faqat asosiy processni o‘ldiradi
+                        _logger.LogInformation("Process timed out and was killed.");
+                    }
+
+                    // Output va errorni yakunlash
+                    string output = await outputTask;
+                    string error = await errorTask;
+
+                    if (!string.IsNullOrWhiteSpace(output))
+                        _logger.LogInformation($"Process Output: {output}");
+                    if (!string.IsNullOrWhiteSpace(error))
+                        _logger.LogError($"Process Error: {error}");
+
+                    _logger.LogInformation($"Process Exit Code: {process.ExitCode}");
+                    return process.ExitCode;
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError($"RunProcessAsync error: {ex.Message}");
-                Console.WriteLine($"RunProcessAsync error: {ex.Message}");
-                return false;
+                _logger.LogError($"Error executing process: {ex.Message}");
+                return -1;
             }
         }
-
 
         public bool CloseApplication(string appName)
         {

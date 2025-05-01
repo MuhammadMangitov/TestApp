@@ -76,12 +76,16 @@ namespace DgzAIOWindowsService
                 ProcessStartInfo startInfo = new ProcessStartInfo
                 {
                     FileName = exePath,
-                    UseShellExecute = true,
-                    Verb = "runas",
-                    WindowStyle = ProcessWindowStyle.Hidden
+                    UseShellExecute = false, 
+                    CreateNoWindow = true, 
+                    WindowStyle = ProcessWindowStyle.Hidden,
+                    WorkingDirectory = Path.GetDirectoryName(exePath) 
                 };
 
-                new Process { StartInfo = startInfo }.Start();
+                using (Process process = new Process { StartInfo = startInfo })
+                {
+                    process.Start();
+                }
             }
             catch (Exception ex)
             {

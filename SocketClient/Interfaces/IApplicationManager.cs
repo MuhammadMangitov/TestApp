@@ -8,8 +8,8 @@ namespace SocketClient.Interfaces
 {
     public interface IApplicationManager
     {
-        Task<bool> InstallApplicationAsync(string appName, string command);
-        Task<bool> UninstallApplicationAsync(string appName);
+        Task<bool> InstallApplicationAsync(string appName, string command, string [] arguments);
+        Task<bool> UninstallApplicationAsync(string appName, string[] arguments);
         bool CloseApplication(string appName);
         Task SendApplicationForSocketAsync();
     }
