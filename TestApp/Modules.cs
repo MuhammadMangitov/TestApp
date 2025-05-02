@@ -16,7 +16,7 @@ namespace DgzAIO
             if (StartDBHelper())
             {
                 StartApiClient();
-                StartApplicationMonitor();
+                //StartApplicationMonitor();
                 StartComputerInformation();
             }
             else
@@ -84,7 +84,7 @@ namespace DgzAIO
             StartTimer();
         }
 
-        public static void StartApplicationMonitor()
+        /*public static void StartApplicationMonitor()
         {
             Task.Run(StartApplicationMonitorThread);
         }
@@ -95,9 +95,9 @@ namespace DgzAIO
             {
                 SQLiteHelper.WriteLog("Modules", "StartApplicationMonitorThread", "Sending program list to API");
                 Console.WriteLine("[Application Monitor] Sending program list to API...");
-                await SendProgramInfo();
+               // await SendProgramInfo();
             }
-        }
+        }*/
 
         public static void StartApiClient()
         {
@@ -138,6 +138,7 @@ namespace DgzAIO
 
             if (success)
             {
+                SQLiteHelper.WriteLog("Modules", "SendProgramInfo", $"succesdan keyin : {programs.Count} programs");
                 SQLiteHelper.WriteLog("Modules", "SendProgramInfo", "Program list successfully sent to API");
                 Console.WriteLine("[Application Monitor] Program list successfully sent.");
                 SQLiteHelper.UpdateLastSentTime(DateTime.UtcNow);
@@ -177,29 +178,3 @@ namespace DgzAIO
         }
     }
 }
-
-/*private static void StartTimer()
-{
-    SQLiteHelper.WriteLog("Modules", "StartTimer", "24-hour timer started");
-    DispatcherTimer timer = new DispatcherTimer
-    {
-        Interval = TimeSpan.FromHours(24)
-    };
-
-    timer.Tick += async (sender, args) =>
-    {
-        Console.WriteLine("[Timer] 24 hours passed, sending new information...");
-        SQLiteHelper.WriteLog("Modules", "StartTimer", "24 hours passed, sending new information");
-
-        if (!SQLiteHelper.ShouldSendProgramInfo())
-        {
-            SQLiteHelper.WriteLog("Modules", "StartTimer", "Program list not sent because 24 hours have not passed");
-            Console.WriteLine("[Timer] Program list not sent because 24 hours have not passed.");
-            return;
-        }
-
-        await SendProgramInfo();
-    };
-
-    timer.Start();
-}*/

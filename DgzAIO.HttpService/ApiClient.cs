@@ -32,6 +32,7 @@ namespace DgzAIO.HttpService
 
                 var response = await client.PostAsync(BaseUrl, content);
                 int statusCode = (int)response.StatusCode;
+
                 /*Console.WriteLine($"RESPONSE URL: {response.RequestMessage}");
                 Console.WriteLine($"RESPONSE : {response}");*/
 
@@ -62,6 +63,7 @@ namespace DgzAIO.HttpService
         {
             try
             {
+                //SQLiteHelper.WriteLog("ApiClient", "SendData", $"Sending data to {url}");
                 var json = JsonConvert.SerializeObject(data);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
                 
@@ -81,6 +83,7 @@ namespace DgzAIO.HttpService
                 }
 
                 Console.WriteLine($"[Error]: {response.StatusCode} - {response.ReasonPhrase}");
+                SQLiteHelper.WriteError($"[Error]: {response.StatusCode} - {response.ReasonPhrase}");
             }
             catch (HttpRequestException httpEx)
             {

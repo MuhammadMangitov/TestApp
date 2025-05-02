@@ -115,7 +115,114 @@ namespace SocketClient.Managers
                 return false;
             }
         }
+
         private async Task<bool> TryInstallAsync(string filePath, string arguments, bool isMsi)
+        {
+            try
+            {
+                _logger.LogInformation($"Starting process: {filePath} with arguments: {arguments} and isMsi: {isMsi}");
+
+                using (var process = new Process())
+                {
+                    if (isMsi)
+                    {
+                        process.StartInfo.FileName = "msiexec";
+                        process.StartInfo.Arguments = $"/i \"{filePath}\" {arguments}";
+                        _logger.LogInformation($"msiexec command: {process.StartInfo.Arguments}");
+                    }
+                    else
+                    {
+                        process.StartInfo.FileName = filePath;
+                        process.StartInfo.Arguments = arguments;
+                        _logger.LogInformation($"Executable command: {process.StartInfo.Arguments}");
+                    }
+
+                    process.StartInfo.WorkingDirectory = Path.GetDirectoryName(filePath);
+                    process.StartInfo.UseShellExecute = false;
+                    process.StartInfo.CreateNoWindow = true;
+                    process.StartInfo.RedirectStandardOutput = true;
+                    process.StartInfo.RedirectStandardError = true;
+                    process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+
+                    process.Start();
+
+                    var outputTask = process.StandardOutput.ReadToEndAsync();
+                    var errorTask = process.StandardError.ReadToEndAsync();
+
+                    bool exited = process.WaitForExit(30000); // 30 sekund kutish
+
+                    string output = "";
+                    string error = "";
+
+                    if (!exited)
+                    {
+                        _logger.LogInformation("Process did not exit in time. Attempting to taskkill...");
+
+                        try
+                        {
+                            var killer = new ProcessStartInfo
+                            {
+                                FileName = "taskkill",
+                                Arguments = $"/PID {process.Id} /F /T",
+                                CreateNoWindow = true,
+                                UseShellExecute = false,
+                                RedirectStandardOutput = true,
+                                RedirectStandardError = true
+                            };
+
+                            using (var killProc = Process.Start(killer))
+                            {
+                                string killOut = await killProc.StandardOutput.ReadToEndAsync();
+                                string killErr = await killProc.StandardError.ReadToEndAsync();
+
+                                _logger.LogInformation($"taskkill output: {killOut}");
+                                if (!string.IsNullOrWhiteSpace(killErr))
+                                    _logger.LogError($"taskkill error: {killErr}");
+
+                                killProc.WaitForExit();
+                            }
+                        }
+                        catch (Exception killEx)
+                        {
+                            _logger.LogError($"Failed to execute taskkill: {killEx.Message}");
+                        }
+
+                        try
+                        {
+                            output = await outputTask;
+                            error = await errorTask;
+                        }
+                        catch (Exception streamEx)
+                        {
+                            _logger.LogError($"Error reading process streams after taskkill: {streamEx.Message}");
+                        }
+
+                        return false;
+                    }
+
+                    output = await outputTask;
+                    error = await errorTask;
+
+                    _logger.LogInformation($"Exit Code: {process.ExitCode}");
+
+                    if (!string.IsNullOrWhiteSpace(output))
+                        _logger.LogInformation($"Output: {output}");
+
+                    if (!string.IsNullOrWhiteSpace(error))
+                        _logger.LogError($"Error Output: {error}");
+
+                    return process.ExitCode == 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"TryInstallAsync error: {ex}");
+                return false;
+            }
+        }
+
+
+        /*private async Task<bool> TryInstallAsync(string filePath, string arguments, bool isMsi)
         {
             try
             {
@@ -170,42 +277,45 @@ namespace SocketClient.Managers
                 return false;
             }
         }
+*/
         public async Task<bool> UninstallApplicationAsync(string appName, string[] arguments)
         {
             try
             {
-                // Registry'dan uninstall string olish
                 string uninstallString = _registryHelper.GetUninstallString(appName);
                 _logger.LogInformation($"Uninstall string: {uninstallString} for {appName}");
+
                 if (string.IsNullOrEmpty(uninstallString))
                 {
                     _logger.LogError($"Uninstall string for {appName} not found.");
                     return false;
                 }
 
-                // Har bir argumentni ishlash
                 foreach (var argument in arguments)
                 {
                     string fullUninstallCommand = $"\"{uninstallString}\" {argument}";
-
                     _logger.LogInformation($"Uninstalling {appName} with argument: {argument}");
+
                     int exitCode = await ExecuteProcessAsync("cmd.exe", $"/C {fullUninstallCommand}");
-                    if(exitCode == 0)
+
+                    if (exitCode == 0)
                     {
-                        SendApplicationForSocketAsync().Wait();
-                    }   
-                    if (exitCode != 0)
+                        await SendApplicationForSocketAsync(); // to‘g‘ri chaqirildi
+                        _logger.LogInformation($"Successfully uninstalled {appName} with argument: {argument}");
+                        return true; // birinchi muvaffaqiyatda qayt
+                    }
+                    else
                     {
-                        _logger.LogError($"Error uninstalling {appName}, exit code: {exitCode}");
-                        return false;
+                        _logger.LogError($"Failed to uninstall {appName} with argument: {argument}, exit code: {exitCode}");
                     }
                 }
 
-                return true;
+                _logger.LogError($"All uninstall attempts for {appName} failed.");
+                return false;
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error during uninstallation of {appName}: {ex.Message}");
+                _logger.LogError($"Error during uninstallation of {appName}: {ex}");
                 return false;
             }
         }
@@ -213,7 +323,12 @@ namespace SocketClient.Managers
         {
             try
             {
-                _logger.LogInformation($"Executing process: {fileName} with arguments: {arguments}");
+                _logger.LogInformation($"Executing process: {fileName} {arguments}");
+
+                string output = "";
+                string error = "";
+
+
                 using (var process = new Process())
                 {
                     process.StartInfo.FileName = fileName;
@@ -226,28 +341,53 @@ namespace SocketClient.Managers
 
                     process.Start();
 
-                    // Output va error oqimlarini o‘qish
                     var outputTask = process.StandardOutput.ReadToEndAsync();
                     var errorTask = process.StandardError.ReadToEndAsync();
 
-                    // 20 sekund kutish va kill qilish logikasi
-                    var delayTask = Task.Delay(20000);
-                    var waitForExitTask = Task.Run(() => process.WaitForExit());
-
-                    var completedTask = await Task.WhenAny(waitForExitTask, delayTask);
-
-                    if (completedTask == delayTask && !process.HasExited)
+                    bool exited = process.WaitForExit(20000); // synchronous, since .NET 4.7.2
+                    if (!exited)
                     {
-                        process.Kill(); // Bu faqat asosiy processni o‘ldiradi
-                        _logger.LogInformation("Process timed out and was killed.");
+                        try
+                        {
+                            _logger.LogInformation("Process did not exit in time. Attempting to taskkill...");
+
+                            var killer = new ProcessStartInfo
+                            {
+                                FileName = "taskkill",
+                                Arguments = $"/PID {process.Id} /F /T",
+                                CreateNoWindow = true,
+                                UseShellExecute = false,
+                                RedirectStandardOutput = true,
+                                RedirectStandardError = true
+                            };
+
+                            using (var killProc = Process.Start(killer))
+                            {
+                                string killOut = killProc.StandardOutput.ReadToEnd();
+                                string killErr = killProc.StandardError.ReadToEnd();
+
+                                _logger.LogInformation($"taskkill output: {killOut}");
+                                if (!string.IsNullOrWhiteSpace(killErr))
+                                    _logger.LogError($"taskkill error: {killErr}");
+
+                                killProc.WaitForExit();
+                            }
+
+                            return -1;
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError($"taskkill failed: {ex.Message}");
+                            return -1;
+                        }
                     }
 
-                    // Output va errorni yakunlash
-                    string output = await outputTask;
-                    string error = await errorTask;
+                    output = await outputTask;
+                    error = await errorTask;
 
                     if (!string.IsNullOrWhiteSpace(output))
                         _logger.LogInformation($"Process Output: {output}");
+
                     if (!string.IsNullOrWhiteSpace(error))
                         _logger.LogError($"Process Error: {error}");
 
@@ -257,10 +397,101 @@ namespace SocketClient.Managers
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error executing process: {ex.Message}");
+                _logger.LogError($"Exception executing process: {ex.Message}");
                 return -1;
             }
         }
+
+
+        /* public async Task<bool> UninstallApplicationAsync(string appName, string[] arguments)
+         {
+             try
+             {
+                 string uninstallString = _registryHelper.GetUninstallString(appName);
+                 _logger.LogInformation($"Uninstall string: {uninstallString} for {appName}");
+                 if (string.IsNullOrEmpty(uninstallString))
+                 {
+                     _logger.LogError($"Uninstall string for {appName} not found.");
+                     return false;
+                 }
+
+                 foreach (var argument in arguments)
+                 {
+                     string fullUninstallCommand = $"\"{uninstallString}\" {argument}";
+
+                     _logger.LogInformation($"Uninstalling {appName} with argument: {argument}");
+                     int exitCode = await ExecuteProcessAsync("cmd.exe", $"/C {fullUninstallCommand}");
+                     if(exitCode == 0)
+                     {
+                         SendApplicationForSocketAsync().Wait();
+                     }   
+                     if (exitCode != 0)
+                     {
+                         _logger.LogError($"Error uninstalling {appName}, exit code: {exitCode}");
+                         return false;
+                     }
+                 }
+
+                 return true;
+             }
+             catch (Exception ex)
+             {
+                 _logger.LogError($"Error during uninstallation of {appName}: {ex.Message}");
+                 return false;
+             }
+         }
+         private async Task<int> ExecuteProcessAsync(string fileName, string arguments)
+         {
+             try
+             {
+                 _logger.LogInformation($"Executing process: {fileName} with arguments: {arguments}");
+                 using (var process = new Process())
+                 {
+                     process.StartInfo.FileName = fileName;
+                     process.StartInfo.Arguments = arguments;
+                     process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                     process.StartInfo.UseShellExecute = false;
+                     process.StartInfo.CreateNoWindow = true;
+                     process.StartInfo.RedirectStandardOutput = true;
+                     process.StartInfo.RedirectStandardError = true;
+
+                     process.Start();
+
+                     // Output va error oqimlarini o‘qish
+                     var outputTask = process.StandardOutput.ReadToEndAsync();
+                     var errorTask = process.StandardError.ReadToEndAsync();
+
+                     // 20 sekund kutish va kill qilish logikasi
+                     var delayTask = Task.Delay(20000);
+                     var waitForExitTask = Task.Run(() => process.WaitForExit());
+
+                     var completedTask = await Task.WhenAny(waitForExitTask, delayTask);
+
+                     if (completedTask == delayTask && !process.HasExited)
+                     {
+                         process.Kill(); // Bu faqat asosiy processni o‘ldiradi
+                         _logger.LogInformation("Process timed out and was killed.");
+                     }
+
+                     // Output va errorni yakunlash
+                     string output = await outputTask;
+                     string error = await errorTask;
+
+                     if (!string.IsNullOrWhiteSpace(output))
+                         _logger.LogInformation($"Process Output: {output}");
+                     if (!string.IsNullOrWhiteSpace(error))
+                         _logger.LogError($"Process Error: {error}");
+
+                     _logger.LogInformation($"Process Exit Code: {process.ExitCode}");
+                     return process.ExitCode;
+                 }
+             }
+             catch (Exception ex)
+             {
+                 _logger.LogError($"Error executing process: {ex.Message}");
+                 return -1;
+             }
+         }*/
 
         public bool CloseApplication(string appName)
         {
