@@ -199,7 +199,6 @@ namespace DgzAIOWindowsService
                         sw.WriteLine($"copy /Y \"{sourceFile}\" \"{destFile}\" >> \"{logFile}\"");
                     }
 
-                    // Delete temporary files
                     sw.WriteLine($"echo Deleting temporary files... >> \"{logFile}\"");
                     sw.WriteLine($"rmdir /F /Q \"{localPath}\" >> \"{logFile}\"");
                     sw.WriteLine($"rmdir /S /Q \"{tempDir}\" >> \"{logFile}\"");
