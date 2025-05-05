@@ -4,6 +4,7 @@ using System;
 
 namespace DgzAIO.HttpService
 {
+    // hozricha kerak emas, ishlatilmayapti bu class
     public class DbConfigurationManager
     {
         public static IConfiguration Configuration { get; }
@@ -31,14 +32,6 @@ namespace DgzAIO.HttpService
                 Console.WriteLine("Registrda o'zgaruvchi topilmadi.");
             }
             return dbPath;
-            /*string dbPath = Environment.GetEnvironmentVariable("DGZ_A_I_O_DB", EnvironmentVariableTarget.Machine);
-
-            if (string.IsNullOrEmpty(dbPath))
-            {
-                dbPath = Configuration["DGZ_AIO_DB_PATH"];
-            }
-
-            return dbPath;*/
         }
         public static string GetRegistryValue(string keyPath, string valueName)
         {

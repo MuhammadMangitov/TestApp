@@ -9,11 +9,12 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>SocketClient</RootNamespace>
     <AssemblyName>SocketClient</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -126,7 +127,7 @@
       <Name>ApplicationMonitor</Name>
     </ProjectReference>
     <ProjectReference Include="..\DBHelper\DBHelper.csproj">
-      <Project>{9B48B5CF-67FA-419D-84BF-17E5DE36F4DB}</Project>
+      <Project>{9b48b5cf-67fa-419d-84bf-17e5de36f4db}</Project>
       <Name>DBHelper</Name>
     </ProjectReference>
     <ProjectReference Include="..\DgzAIO.HttpService\ApiClient.csproj">

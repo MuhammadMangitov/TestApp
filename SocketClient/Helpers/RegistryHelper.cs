@@ -22,14 +22,16 @@ namespace SocketClient.Helpers
             string[] registryPaths =
             {
                 @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
-                @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
+                @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall",
+                @"Software\Microsoft\Windows\CurrentVersion\Uninstall" // HKCU uchun
             };
 
             try
             {
                 foreach (string path in registryPaths)
                 {
-                    using (RegistryKey key = Registry.LocalMachine.OpenSubKey(path))
+                    RegistryKey baseKey = path.StartsWith(@"Software\") ? Registry.CurrentUser : Registry.LocalMachine;
+                    using (RegistryKey key = baseKey.OpenSubKey(path))
                     {
                         if (key == null) continue;
 
