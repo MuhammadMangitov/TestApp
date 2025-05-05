@@ -51,6 +51,7 @@ namespace SocketClient
             RegisterEvents();
         }
 
+
         private void RegisterEvents()
         {
             _client.On("connect", async response =>
