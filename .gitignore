@@ -361,3 +361,10 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/TestApp/DgzAIO.csproj
+/TestApp/packages.config
+/ComputerInformation/packages.config
+/ApplicationMonitor/packages.config
+/DgzAIOWindowsService/packages.config
+/SocketClient/packages.config
+/UpdateMaker/packages.config
