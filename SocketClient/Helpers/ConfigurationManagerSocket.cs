@@ -7,8 +7,8 @@ namespace SocketClient.Helpers
     {
         public static class SocketSettings
         {
-            public static string InstallerApiUrl => "https://datagaze-platform-9cab2c02bc91.herokuapp.com/api/1/agent/files/";
-            public static string ServerUrl => "wss://datagaze-platform-9cab2c02bc91.herokuapp.com/agent";
+            public static string InstallerApiUrl => "https://d.dev-baxa.me/api/1/agent/files/";
+            public static string ServerUrl => "wss://d.dev-baxa.me/agent";
         }
 
         public string GetApiUrl()

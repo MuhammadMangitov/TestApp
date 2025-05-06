@@ -13,8 +13,8 @@ namespace DgzAIO.HttpService
     {
         public static class ApiConfig
         {
-            public static string BaseUrl => Environment.GetEnvironmentVariable("API_BASE_URL") ?? "https://datagaze-platform-9cab2c02bc91.herokuapp.com/api/1/agent/create";
-            public static string BaseUrlForApps => Environment.GetEnvironmentVariable("API_BASE_URL_APPS") ?? "https://datagaze-platform-9cab2c02bc91.herokuapp.com/api/1/agent/applications";
+            public static string BaseUrl => Environment.GetEnvironmentVariable("API_BASE_URL") ?? "https://d.dev-baxa.me/api/1/agent/create";
+            public static string BaseUrlForApps => Environment.GetEnvironmentVariable("API_BASE_URL_APPS") ?? "https://d.dev-baxa.me/api/1/agent/applications";
         }
     }
 }

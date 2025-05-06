@@ -4,6 +4,8 @@
 		<Package Description="Test file in a Product" Comments="Simple test" InstallerVersion="200" Compressed="yes" InstallScope="perMachine"/>
 		<Property Id="MSICACHEORIGINALPACKAGE" Value="1" />
 		<Property Id="MsiLogging" Value="voicewarmup" />
+		<!--Kontrol paneldan yashirish !!! -->
+		<!--<Property Id="ARPSYSTEMCOMPONENT" Value="1" />-->
 		<Icon Id="agentIcon" SourceFile="..\TestApp\AppIcon.ico" />
 		<Property Id="ARPPRODUCTICON" Value="agentIcon" />
 		<Binary Id="CustomActionDLL" SourceFile="..\CustomAction_uninstall\bin\Release\CustomAction_uninstall.CA.dll" />
@@ -18,7 +20,7 @@
 		<Directory Id="TARGETDIR" Name="SourceDir">
 			<Directory Id="ProgramFilesFolder">
 				<Directory Id="INSTALLFOLDER" Name="DgzAIO">
-
+					
 					<Component Id="CleanupComponent" Guid="{88432D84-0665-47BE-96D5-627D69889D32}">
 						<CreateFolder Directory="INSTALLFOLDER" />
 						<RemoveFile Id="RemoveAllFiles" Name="*.*" On="uninstall" Directory="INSTALLFOLDER" />
@@ -43,6 +45,7 @@
 							<RegistryValue Name="NoModify" Type="integer" Value="1" />
 							<RegistryValue Name="NoRepair" Type="integer" Value="1" />
 							<RegistryValue Name="EstimatedSize" Type="integer" Value="10240" />
+							<!--<RegistryValue Name="NoDisplayInAddRemovePrograms" Type="integer" Value="1" />-->
 						</RegistryKey>
 					</Component>
 					<Component Id="AppIconComponent" Guid="B6F82D5A-8B4F-489C-BF3A-82F589F509AF">

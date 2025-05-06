@@ -11,8 +11,8 @@ namespace DgzAIO
     {
         public static class DgzApi
         {
-            public static string SERVER_URL_UPDATE_AGENT => Environment.GetEnvironmentVariable("API_SERVER_URL_UPDATE_AGENT") ?? "https://datagaze-platform-9cab2c02bc91.herokuapp.com/api/1/agent/update-info";
-            public static string DOWNLOAD_URL_AGENT_ZIP => Environment.GetEnvironmentVariable("API_DOWNLOAD_URL_AGENT_ZIP") ?? "https://datagaze-platform-9cab2c02bc91.herokuapp.com/api/1/agent/update/";
+            public static string SERVER_URL_UPDATE_AGENT => Environment.GetEnvironmentVariable("API_SERVER_URL_UPDATE_AGENT") ?? "https://d.dev-baxa.me/api/1/agent/update-info";
+            public static string DOWNLOAD_URL_AGENT_ZIP => Environment.GetEnvironmentVariable("API_DOWNLOAD_URL_AGENT_ZIP") ?? "https://d.dev-baxa.me/api/1/agent/update/";
         }
     }
 }
